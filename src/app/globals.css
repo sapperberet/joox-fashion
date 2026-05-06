@@ -1,26 +1,158 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --obsidian: #0c0a07;
+  --sand: #f4e6c9;
+  --gold: #d7b46a;
+  --gold-soft: #e9d1a1;
+  --stone: #18120e;
+  --ink: #050403;
+  --emerald: #54c6a0;
+  --clay: #b87b44;
+  --lapis: #1b2b4a;
+  --copper: #b57c3a;
+  --shadow: 0 30px 60px rgba(0, 0, 0, 0.35);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-obsidian: var(--obsidian);
+  --color-sand: var(--sand);
+  --color-gold: var(--gold);
+  --color-gold-soft: var(--gold-soft);
+  --color-stone: var(--stone);
+  --color-ink: var(--ink);
+  --color-emerald: var(--emerald);
+  --color-clay: var(--clay);
+  --color-lapis: var(--lapis);
+  --color-copper: var(--copper);
+  --font-sans: var(--font-body);
+  --font-display: var(--font-display);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background:
+    radial-gradient(circle at 20% 10%, rgba(215, 180, 106, 0.18), transparent 45%),
+    radial-gradient(circle at 80% 15%, rgba(27, 43, 74, 0.3), transparent 48%),
+    radial-gradient(circle at 50% 80%, rgba(184, 123, 68, 0.14), transparent 55%),
+    linear-gradient(180deg, #130f0b 0%, #070604 70%, #050403 100%);
+  color: var(--sand);
+  font-family: var(--font-body), sans-serif;
+  min-height: 100vh;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(120deg, transparent 35%, rgba(215, 180, 106, 0.08) 50%, transparent 65%),
+    radial-gradient(circle at 20% 20%, rgba(215, 180, 106, 0.12), transparent 40%),
+    radial-gradient(circle at 80% 30%, rgba(84, 198, 160, 0.08), transparent 45%),
+    radial-gradient(circle at 50% 80%, rgba(184, 123, 68, 0.08), transparent 45%);
+  opacity: 0.9;
+  z-index: 0;
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      rgba(215, 180, 106, 0.05),
+      rgba(215, 180, 106, 0.05) 1px,
+      transparent 1px,
+      transparent 120px
+    ),
+    repeating-linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.02),
+      rgba(255, 255, 255, 0.02) 1px,
+      transparent 1px,
+      transparent 120px
+    );
+  opacity: 0.35;
+  z-index: 0;
+}
+
+#__next,
+body > div {
+  position: relative;
+  z-index: 1;
+}
+
+a {
+  color: inherit;
+}
+
+.temple-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  border-bottom: 1px solid rgba(215, 180, 106, 0.12);
+  background: rgba(7, 6, 4, 0.78);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.3);
+}
+
+.temple-header::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(215, 180, 106, 0.7),
+    transparent
+  );
+  opacity: 0.7;
+}
+
+.temple-panel {
+  background: linear-gradient(160deg, rgba(24, 18, 14, 0.95), rgba(7, 6, 4, 0.85));
+}
+
+@keyframes float-slow {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+@keyframes glow-sweep {
+  0% {
+    opacity: 0.3;
+    transform: translateX(-20%);
+  }
+  50% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 0.3;
+    transform: translateX(20%);
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .font-display {
+    font-family: var(--font-display), var(--font-body), sans-serif;
+  }
+  .animate-float {
+    animation: float-slow 10s ease-in-out infinite;
+  }
+  .animate-sweep {
+    animation: glow-sweep 12s ease-in-out infinite;
+  }
 }
