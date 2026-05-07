@@ -1,13 +1,12 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { copy } from "@/lib/i18n";
 import type { Product } from "@/lib/types";
 import { formatCurrency } from "@/lib/format";
 import { useLanguage } from "./SiteProviders";
 import { useCart } from "./CartProvider";
-import { useState } from "react";
 
 type ProductCardProps = {
   product: Product;
@@ -16,8 +15,8 @@ type ProductCardProps = {
 export default function ProductCard({ product }: ProductCardProps) {
   const { locale } = useLanguage();
   const t = copy[locale];
+  const router = useRouter();
   const { addItem } = useCart();
-  const [showImageModal, setShowImageModal] = useState(false);
   const seasonLabel =
     product.season === "summer"
       ? t.sections.summer
@@ -26,11 +25,21 @@ export default function ProductCard({ product }: ProductCardProps) {
         : "";
 
   return (
-    <div className="group flex flex-col overflow-hidden rounded-3xl border-2 border-gold/20 bg-stone/80 p-4 shadow-lg hover:shadow-2xl hover:border-gold/40 transition">
-      <Link
-        href={`/product/${product.slug}`}
-        className="relative aspect-4/5 overflow-hidden rounded-2xl bg-ink/40 cursor-pointer hover:opacity-95 transition group-hover:border-2 group-hover:border-gold/20 border-2 border-transparent"
-        aria-label={locale === "ar" ? product.name_ar : product.name_en}
+    <div
+      className="group flex flex-col overflow-hidden rounded-3xl border-2 border-gold/20 bg-stone/80 p-4 shadow-lg transition hover:border-gold/40 hover:shadow-2xl"
+      role="link"
+      tabIndex={0}
+      aria-label={locale === "ar" ? product.name_ar : product.name_en}
+      onClick={() => router.push(`/product/${product.slug}`)}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          router.push(`/product/${product.slug}`);
+        }
+      }}
+    >
+      <div
+        className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-ink/40 cursor-pointer hover:opacity-95 transition group-hover:border-2 group-hover:border-gold/20 border-2 border-transparent"
       >
         {product.image_url ? (
           <Image
@@ -56,14 +65,14 @@ export default function ProductCard({ product }: ProductCardProps) {
             𓆣 Sale
           </span>
         )}
-      </Link>
+      </div>
       <div className="mt-3 flex flex-1 flex-col gap-2.5 sm:mt-4 sm:gap-3">
-        <Link href={`/product/${product.slug}`} className="flex items-start justify-between gap-2 text-left">
+        <div className="flex items-start justify-between gap-2 text-left">
           <div className="text-lg sm:text-xl font-semibold text-sand line-clamp-2 flex-1 hover:text-gold transition">
             {locale === "ar" ? product.name_ar : product.name_en}
           </div>
           <span className="text-xl sm:text-2xl mt-0.5">𓋹</span>
-        </Link>
+        </div>
         <div className="text-xs sm:text-sm text-sand/70 line-clamp-2">
           {locale === "ar" ? product.description_ar : product.description_en}
         </div>
@@ -88,7 +97,10 @@ export default function ProductCard({ product }: ProductCardProps) {
           </div>
           <button
             type="button"
-            onClick={() => addItem(product, 1)}
+            onClick={(event) => {
+              event.stopPropagation();
+              addItem(product, 1);
+            }}
             className="w-full rounded-full bg-gold px-3 py-2.5 sm:px-4 sm:py-3 text-ink text-xs sm:text-sm uppercase tracking-[0.2em] font-semibold transition hover:bg-gold/90 inline-flex items-center justify-center gap-1">
             {t.products.order}
           </button>

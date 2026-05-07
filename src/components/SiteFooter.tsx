@@ -1,12 +1,30 @@
 "use client";
 
+import { useRef } from "react";
+import { useRouter } from "next/navigation";
 import { copy } from "@/lib/i18n";
 import { useLanguage } from "./SiteProviders";
 import { siteConfig } from "@/lib/site-config";
 
 export default function SiteFooter() {
   const { locale } = useLanguage();
+  const router = useRouter();
   const t = copy[locale];
+  const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearHoldTimer = () => {
+    if (holdTimerRef.current) {
+      clearTimeout(holdTimerRef.current);
+      holdTimerRef.current = null;
+    }
+  };
+
+  const startHoldTimer = () => {
+    clearHoldTimer();
+    holdTimerRef.current = setTimeout(() => {
+      router.push(siteConfig.adminRoute);
+    }, 3000);
+  };
 
   return (
     <footer className="border-t border-gold/10 bg-obsidian px-4 py-8 sm:px-6 sm:py-12 text-sand">
@@ -40,7 +58,16 @@ export default function SiteFooter() {
           </div>
         </div>
         <div className="border-t border-gold/10 pt-4 sm:pt-6 mt-4 sm:mt-6">
-          <p className="text-xs text-sand/60 text-center">◆ &copy; {new Date().getFullYear()} {siteConfig.brand} ◆ All rights reserved.</p>
+          <p
+            className="text-xs text-sand/60 text-center select-none cursor-pointer transition hover:text-gold"
+            onPointerDown={startHoldTimer}
+            onPointerUp={clearHoldTimer}
+            onPointerLeave={clearHoldTimer}
+            onPointerCancel={clearHoldTimer}
+            title="Hold for 3 seconds"
+          >
+            ◆ &copy; {new Date().getFullYear()} {siteConfig.brand} ◆ All rights reserved.
+          </p>
         </div>
       </div>
     </footer>

@@ -30,7 +30,12 @@ export default function SiteHeader() {
   ];
 
   const isHomeActive = pathname === "/";
-  const isProductsActive = pathname === "/products";
+  const isProductsActive =
+    pathname.startsWith("/products") ||
+    pathname.startsWith("/product/") ||
+    pathname.startsWith("/cart") ||
+    pathname.startsWith("/checkout") ||
+    pathname.startsWith("/thank-you");
 
   return (
     <header className="temple-header sticky top-0 z-40 border-b border-gold/10">
