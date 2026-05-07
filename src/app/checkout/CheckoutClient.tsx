@@ -133,7 +133,6 @@ export default function CheckoutClient({ product }: CheckoutClientProps) {
       <main className="mx-auto grid max-w-5xl gap-10 px-6 py-16 lg:grid-cols-[1.1fr_0.9fr]">
         <form
           action={handleSubmit}
-          encType="multipart/form-data"
           className="flex flex-col gap-6 rounded-3xl border border-gold/20 bg-stone/80 p-8 temple-panel"
         >
           <div>

@@ -27,19 +27,17 @@ export default function ProductsClient({
   const [sortBy, setSortBy] = useState<SortOption>("newest");
 
   const visibleProducts = useMemo(() => {
-    let filtered = products;
-
-    const seasonMatch =
-      seasonFilter === "all" || filtered.every((p) => p.season === seasonFilter);
-    const categoryMatch =
-      categoryFilter === "all" || filtered.every((p) => p.category_id === categoryFilter);
-    
-    filtered = filtered.filter((product) => {
-      const seasonOk =
+    let filtered = products.filter((product) => {
+      if (product.stock_qty !== null && product.stock_qty !== undefined) {
+        if (product.stock_qty <= 0) {
+          return false;
+        }
+      }
+      const seasonMatch =
         seasonFilter === "all" || product.season === seasonFilter;
-      const categoryOk =
+      const categoryMatch =
         categoryFilter === "all" || product.category_id === categoryFilter;
-      return seasonOk && categoryOk;
+      return seasonMatch && categoryMatch;
     });
 
     if (sortBy === "priceLow") {

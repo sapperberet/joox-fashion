@@ -41,8 +41,25 @@ function parseSubmittedItems(raw: string): SubmittedItem[] {
 }
 
 function normalizeQuantity(item: CartItem, nextQty: number) {
-  const safe = Number.isFinite(nextQty) ? Math.floor(nextQty) : 1;
-  return Math.max(safe, 1);
+  const minQty = Math.max(item.min_order_qty ?? 1, 1);
+  const orderMultiple = Math.max(item.order_multiple ?? 1, 1);
+  const maxQty = item.max_order_qty ?? item.stock_qty ?? null;
+
+  const safe = Number.isFinite(nextQty) ? Math.floor(nextQty) : minQty;
+  let quantity = Math.max(safe, minQty);
+
+  if (orderMultiple > 1) {
+    const remainder = (quantity - minQty) % orderMultiple;
+    if (remainder !== 0) {
+      quantity = quantity - remainder + orderMultiple;
+    }
+  }
+
+  if (maxQty !== null) {
+    quantity = Math.min(quantity, maxQty);
+  }
+
+  return quantity;
 }
 
 async function resolveCoupon(
@@ -141,7 +158,7 @@ export async function createOrder(formData: FormData) {
   const productIds = Array.from(new Set(inputItems.map((item) => item.id)));
   const { data: dbProducts, error: productsError } = await supabase
     .from("products")
-    .select("id, slug, name_en, name_ar, price, image_url")
+    .select("id, slug, name_en, name_ar, price, image_url, stock_qty, min_order_qty, max_order_qty, order_multiple, bundle_qty, bundle_price")
     .in("id", productIds);
 
   if (productsError) {
@@ -165,16 +182,24 @@ export async function createOrder(formData: FormData) {
       price: Number(dbProduct.price ?? 0),
       image_url: dbProduct.image_url,
       quantity: entry.quantity,
-      stock_qty: null,
-      min_order_qty: null,
-      max_order_qty: null,
-      order_multiple: null,
-      bundle_qty: null,
-      bundle_price: null,
+      stock_qty: dbProduct.stock_qty,
+      min_order_qty: dbProduct.min_order_qty,
+      max_order_qty: dbProduct.max_order_qty,
+      order_multiple: dbProduct.order_multiple,
+      bundle_qty: dbProduct.bundle_qty,
+      bundle_price: dbProduct.bundle_price,
     };
 
     const normalizedQty = normalizeQuantity(item, entry.quantity);
     item.quantity = normalizedQty;
+
+    if (item.stock_qty !== null && item.stock_qty <= 0) {
+      return { success: false, error: `${item.name_en} is out of stock.` };
+    }
+
+    if (item.stock_qty !== null && item.quantity > item.stock_qty) {
+      return { success: false, error: `Insufficient stock for ${item.name_en}.` };
+    }
 
     cartItems.push(item);
   }
@@ -227,13 +252,21 @@ export async function createOrder(formData: FormData) {
     id: orderId,
     customer_name: name,
     phone,
+    address,
     city,
     district,
-    address,
+    landmark: landmark || null,
+    building_number: buildingNumber || null,
+    floor: floor || null,
+    apartment: apartment || null,
     notes,
     payment_method: paymentMethod,
+    payment_status: "pending",
+    receipt_url: receiptUrl,
     subtotal,
     discount: walletDiscount,
+    coupon_code: coupon?.code ?? null,
+    coupon_discount: couponDiscount,
     total,
     items: orderItems,
     status: "new",
@@ -243,12 +276,66 @@ export async function createOrder(formData: FormData) {
     return { success: false, error: insertError.message };
   }
 
-  // Stock updates and coupon tracking disabled - columns don't exist yet
-  // TODO: Add stock_qty, coupon_code columns to orders table, then re-enable
+  for (const item of cartItems) {
+    if (item.stock_qty !== null) {
+      const nextStock = Math.max(item.stock_qty - item.quantity, 0);
+      await supabase.from("products").update({ stock_qty: nextStock }).eq("id", item.id);
+    }
+  }
+
+  if (coupon?.code) {
+    const { data: currentCoupon } = await supabase
+      .from("coupons")
+      .select("used_count")
+      .eq("code", coupon.code)
+      .single();
+
+    if (currentCoupon) {
+      await supabase
+        .from("coupons")
+        .update({ used_count: (currentCoupon.used_count ?? 0) + 1 })
+        .eq("code", coupon.code);
+    }
+  }
+
+  const itemsCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  const itemsDescription = cartItems
+    .map((item) => `${item.name_en} x${item.quantity}`)
+    .join(", ");
+
+  const codAmount = paymentMethod === "cod" ? total : 0;
+  const bostaDelivery = await createBostaDelivery({
+    orderId,
+    customerName: name,
+    phone,
+    notes,
+    codAmount,
+    goodsValue: subtotal,
+    itemsCount,
+    itemsDescription,
+    address: {
+      city,
+      district,
+      firstLine: address,
+      secondLine: landmark || null,
+      buildingNumber: buildingNumber || null,
+      floor: floor || null,
+      apartment: apartment || null,
+    },
+  });
 
   if (bostaDelivery) {
-    // Shipping updates disabled - columns don't exist yet
-    // TODO: Add shipping columns to orders table, then re-enable
+    const shippingState = bostaDelivery.error ? "failed" : bostaDelivery.state || null;
+    await supabase
+      .from("orders")
+      .update({
+        shipping_provider: "bosta",
+        shipping_tracking_number: bostaDelivery.trackingNumber || null,
+        shipping_reference: bostaDelivery.businessReference || null,
+        shipping_state: shippingState,
+        shipping_error: bostaDelivery.error || null,
+      })
+      .eq("id", orderId);
   }
 
   revalidatePath("/atelier");

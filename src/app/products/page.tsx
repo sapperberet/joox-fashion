@@ -11,7 +11,7 @@ async function getProducts(): Promise<Product[]> {
   const { data } = await supabase
     .from("products")
     .select(
-      "id, category_id, name_en, name_ar, slug, description_en, description_ar, price, image_url, is_active, featured, season, created_at",
+      "id, category_id, name_en, name_ar, slug, description_en, description_ar, price, image_url, is_active, featured, season, created_at, stock_qty, min_order_qty, max_order_qty, order_multiple, bundle_qty, bundle_price",
     )
     .eq("is_active", true)
     .order("created_at", { ascending: false });

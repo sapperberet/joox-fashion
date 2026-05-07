@@ -20,6 +20,14 @@ export const metadata: Metadata = {
   title: "Joox Fashion | Egyptian Street Luxury",
   description:
     "Joox Fashion blends Egyptian-inspired luxury with modern streetwear.",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", type: "image/x-icon" },
+      { url: "/joox-icon.png", type: "image/png" },
+    ],
+    shortcut: "/favicon.ico",
+    apple: "/joox-icon.png",
+  },
 };
 
 export default function RootLayout({

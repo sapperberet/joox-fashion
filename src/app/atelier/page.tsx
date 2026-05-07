@@ -13,6 +13,7 @@ import {
   toggleProductActive,
   updateOrderStatus,
   createCoupon,
+  updateCoupon,
   deleteCoupon,
 } from "./actions";
 
@@ -26,7 +27,7 @@ async function getAdminData(): Promise<{
 }> {
   const supabase = getSupabaseAdmin();
 
-  const [{ data: categories }, { data: products }, { data: orders }] =
+  const [{ data: categories }, { data: products }, { data: coupons }, { data: orders }] =
     await Promise.all([
       supabase
         .from("categories")
@@ -37,6 +38,10 @@ async function getAdminData(): Promise<{
         .select(
           "id, category_id, name_en, name_ar, slug, description_en, description_ar, price, image_url, is_active, featured, season, stock_qty, min_order_qty, max_order_qty, order_multiple",
         )
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("coupons")
+        .select("id, code, type, value, min_subtotal, max_uses, used_count, starts_at, expires_at, is_active")
         .order("created_at", { ascending: false }),
       supabase
         .from("orders")
@@ -50,7 +55,7 @@ async function getAdminData(): Promise<{
   return {
     categories: categories ?? [],
     products: products ?? [],
-    coupons: [],
+    coupons: coupons ?? [],
     orders: orders ?? [],
   };
 }
