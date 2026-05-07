@@ -78,6 +78,11 @@ export default function SiteHeader() {
               </span>
             )}
           </Link>
+          {/* Desktop Language Toggle */}
+          <div className="hidden md:block">
+            <LanguageToggle />
+          </div>
+
           {/* Mobile Language Toggle */}
           <div className="md:hidden">
             <LanguageToggle />

@@ -124,10 +124,10 @@ export default function HomePageClient({
           <div className="mx-auto flex max-w-6xl flex-col gap-6 sm:gap-8">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
               <h2 className="font-display text-2xl sm:text-3xl md:text-4xl tracking-[0.2em] text-gold">
-                {t.nav.collections}
+                👑 {t.nav.collections} 👑
               </h2>
               <p className="text-xs sm:text-sm uppercase tracking-[0.3em] text-sand/60">
-                {t.hero.eyebrow}
+                ◇ {t.hero.eyebrow} ◇
               </p>
             </div>
             <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
@@ -137,10 +137,10 @@ export default function HomePageClient({
               >
                 <div className="flex items-center justify-between gap-2">
                   <h3 className="font-display text-lg sm:text-2xl md:text-3xl tracking-[0.2em] text-gold">
-                    {t.sections.summer}
+                    ☀️ {t.sections.summer} ☀️
                   </h3>
                   <span className="text-xs sm:text-sm uppercase tracking-[0.3em] text-sand/60 shrink-0">
-                    01
+                    ◇ 01 ◇
                   </span>
                 </div>
                 <div className="mt-3 sm:mt-4 flex flex-wrap gap-2">
@@ -160,10 +160,10 @@ export default function HomePageClient({
               >
                 <div className="flex items-center justify-between gap-2">
                   <h3 className="font-display text-lg sm:text-2xl md:text-3xl tracking-[0.2em] text-gold">
-                    {t.sections.winter}
+                    ❄️ {t.sections.winter} ❄️
                   </h3>
                   <span className="text-xs sm:text-sm uppercase tracking-[0.3em] text-sand/60 shrink-0">
-                    02
+                    ◇ 02 ◇
                   </span>
                 </div>
                 <div className="mt-3 sm:mt-4 flex flex-wrap gap-2">
@@ -185,7 +185,7 @@ export default function HomePageClient({
           <div className="mx-auto flex max-w-6xl flex-col gap-6 sm:gap-8">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
               <h2 className="font-display text-2xl sm:text-3xl md:text-4xl tracking-[0.2em] text-gold">
-                {t.sections.featured}
+                ✨ {t.sections.featured} ✨
               </h2>
               <Link
                 href="/products"

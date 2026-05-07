@@ -63,12 +63,12 @@ export default function ProductsClient({
       <main className="mx-auto flex max-w-6xl flex-col gap-8 sm:gap-12 px-4 sm:px-6 py-8 sm:py-16">
         <div className="flex flex-col gap-2 sm:gap-3">
           <p className="text-xs sm:text-sm uppercase tracking-[0.4em] text-gold/80">
-            ◆ {t.nav.products} ◆
+            ◇ {t.nav.products} ◇
           </p>
           <h1 className="font-display text-3xl sm:text-4xl md:text-5xl tracking-[0.2em] text-gold">
-            {t.nav.products}
+            👑 {t.nav.products} 👑
           </h1>
-          <p className="text-base sm:text-lg text-sand/70">{t.hero.description}</p>
+          <p className="text-base sm:text-lg text-sand/70">✨ {t.hero.description}</p>
         </div>
         <div className="grid gap-3 sm:gap-4 rounded-3xl border border-gold/15 bg-stone/80 p-3 sm:p-5 temple-panel md:grid-cols-[1.2fr_1fr_1fr]">
           <div className="md:col-span-3">
