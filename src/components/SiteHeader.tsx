@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useState } from "react";
 import { copy } from "@/lib/i18n";
+import { calculateCartTotals, calculateLineTotal } from "@/lib/cart";
+import { formatCurrency } from "@/lib/format";
 import { useLanguage } from "./SiteProviders";
 import LanguageToggle from "./LanguageToggle";
 import LogoLockup from "./LogoLockup";
@@ -13,7 +15,9 @@ export default function SiteHeader() {
   const t = copy[locale];
   const { items } = useCart();
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
+  const cartTotals = calculateCartTotals(items, null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const previewItems = items.slice(0, 3);
 
   const navLinks = [
     { href: "/#collections", label: t.nav.collections },
@@ -66,18 +70,50 @@ export default function SiteHeader() {
           >
             {t.nav.products}
           </Link>
-          <Link
-            href="/cart"
-            title={t.nav.cart}
-            className="relative hidden rounded-full border border-gold/40 px-4 py-2.5 text-lg transition hover:bg-gold/10 hover:border-gold/60 md:inline-flex items-center justify-center"
-          >
-            🛒
-            {itemCount > 0 && (
-              <span className="ml-2 rounded-full bg-gold px-2.5 py-0.5 text-xs font-semibold text-ink">
-                {itemCount}
-              </span>
-            )}
-          </Link>
+          <div className="group relative hidden md:block">
+            <Link
+              href="/cart"
+              title={t.nav.cart}
+              className="relative inline-flex items-center justify-center rounded-full border border-gold/40 px-4 py-2.5 text-lg transition hover:bg-gold/10 hover:border-gold/60"
+            >
+              🛒
+              {itemCount > 0 && (
+                <span className="ml-2 rounded-full bg-gold px-2.5 py-0.5 text-xs font-semibold text-ink">
+                  {itemCount}
+                </span>
+              )}
+            </Link>
+            <div className="pointer-events-none absolute right-0 top-full z-50 mt-3 w-80 rounded-3xl border border-gold/20 bg-obsidian/95 p-4 opacity-0 shadow-2xl backdrop-blur transition group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100">
+              <div className="mb-3 flex items-center justify-between border-b border-gold/10 pb-2 text-xs uppercase tracking-[0.25em] text-gold/80">
+                <span>𓂀 {itemCount > 0 ? `${itemCount} items` : "Cart empty"} 𓂀</span>
+                <span>{formatCurrency(cartTotals.total, locale)}</span>
+              </div>
+              {itemCount > 0 ? (
+                <div className="space-y-2">
+                  {previewItems.map((item) => (
+                    <div key={item.id} className="flex items-center justify-between gap-3 text-sm text-sand/80">
+                      <div className="min-w-0">
+                        <div className="truncate font-medium">{locale === "ar" ? item.name_ar : item.name_en}</div>
+                        <div className="text-xs text-sand/55">𓏏 x{item.quantity}</div>
+                      </div>
+                      <div className="shrink-0 text-gold">{formatCurrency(calculateLineTotal(item).total, locale)}</div>
+                    </div>
+                  ))}
+                  {itemCount > previewItems.length && (
+                    <div className="text-xs uppercase tracking-[0.25em] text-sand/55">𓅓 +{itemCount - previewItems.length} more</div>
+                  )}
+                  <Link
+                    href="/cart"
+                    className="mt-3 inline-flex w-full items-center justify-center rounded-full bg-gold px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.2em] text-ink transition hover:bg-gold/90"
+                  >
+                    𓋹 Open cart
+                  </Link>
+                </div>
+              ) : (
+                <div className="text-sm text-sand/60">𓂀 Cart is empty</div>
+              )}
+            </div>
+          </div>
           {/* Desktop Language Toggle */}
           <div className="hidden md:block">
             <LanguageToggle />

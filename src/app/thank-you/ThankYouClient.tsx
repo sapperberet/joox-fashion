@@ -21,7 +21,7 @@ export default function ThankYouClient({ orderId }: ThankYouClientProps) {
         <div className="rounded-3xl border border-gold/20 bg-stone/80 p-6 sm:p-10 space-y-4 sm:space-y-6">
           <div>
             <p className="text-xs sm:text-sm uppercase tracking-[0.4em] text-gold/80">
-              ✓ {t.thankYou.reference}
+              𓂀 {t.thankYou.reference}
             </p>
             <h1 className="mt-3 sm:mt-4 font-display text-3xl sm:text-4xl md:text-5xl tracking-[0.2em] text-gold leading-tight">
               {t.thankYou.title}

@@ -1,0 +1,20 @@
+<svg viewBox="0 0 900 600" xmlns="http://www.w3.org/2000/svg">
+  <!-- Dark blue background -->
+  <rect width="900" height="600" fill="#012169"/>
+  
+  <!-- Thick white cross -->
+  <rect x="0" y="200" width="900" height="200" fill="#FFFFFF"/>
+  <rect x="300" y="0" width="300" height="600" fill="#FFFFFF"/>
+  
+  <!-- Red cross (overlaid) -->
+  <rect x="0" y="225" width="900" height="150" fill="#C8102E"/>
+  <rect x="350" y="0" width="200" height="600" fill="#C8102E"/>
+  
+  <!-- Diagonal white stripes (St Andrew's cross background) -->
+  <polygon points="0,0 900,600 900,500 200,0" fill="#FFFFFF" opacity="0.3"/>
+  <polygon points="900,0 0,600 100,600 900,100" fill="#FFFFFF" opacity="0.3"/>
+  
+  <!-- Diagonal red stripes (St Patrick's cross) -->
+  <polygon points="0,0 900,600 850,600 100,0" fill="#C8102E" opacity="0.5"/>
+  <polygon points="900,0 0,600 50,600 900,50" fill="#C8102E" opacity="0.5"/>
+</svg>

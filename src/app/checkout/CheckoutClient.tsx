@@ -139,8 +139,12 @@ export default function CheckoutClient({ product }: CheckoutClientProps) {
           className="flex flex-col gap-4 rounded-3xl border border-gold/20 bg-stone/80 p-4 sm:gap-6 sm:p-8 temple-panel"
         >
           <div>
-            <p className="text-xs sm:text-sm uppercase tracking-[0.4em] text-gold/80 mb-2">{t.checkout.subtitle}</p>
-            <h1 className="font-display text-2xl sm:text-3xl tracking-[0.2em] text-gold">{t.checkout.title}</h1>
+            <p className="text-xs sm:text-sm uppercase tracking-[0.4em] text-gold/80 mb-2 flex items-center justify-center gap-2">
+              <span>◇◇◇</span> {t.checkout.subtitle} <span>◇◇◇</span>
+            </p>
+            <h1 className="font-display text-2xl sm:text-3xl tracking-[0.2em] text-gold flex items-center justify-center gap-3">
+              <span>𓋹</span> {t.checkout.title} <span>𓂀</span>
+            </h1>
           </div>
 
           <div className="grid gap-3 sm:gap-4">
@@ -290,7 +294,22 @@ export default function CheckoutClient({ product }: CheckoutClientProps) {
                 )}
               </div>
               <label className="text-xs uppercase tracking-[0.2em] text-sand/70">{t.checkout.receipt}</label>
-              <input type="file" name="receipt" accept="image/*" required className="mt-2 w-full rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-sm text-sand" />
+              <div className="relative mt-2">
+                <input
+                  type="file"
+                  name="receipt"
+                  accept="image/*"
+                  required
+                  className="absolute inset-0 h-full w-full opacity-0 cursor-pointer"
+                  id="receipt-upload"
+                />
+                <label
+                  htmlFor="receipt-upload"
+                  className="block w-full rounded-2xl border border-gold/20 bg-obsidian/70 px-4 py-3 text-sm text-sand text-center cursor-pointer hover:bg-obsidian hover:border-gold/40 transition"
+                >
+                  📎 {t.checkout.receipt}
+                </label>
+              </div>
               <p className="mt-2 text-xs text-sand/60">
                 {t.checkout.walletUploadHelp}{" "}
                 {!walletNumbers.length && (

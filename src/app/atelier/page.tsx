@@ -316,12 +316,21 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
             <input name="sale_price" type="number" min={0} step="0.01" placeholder="Sale price (EGP)" className="rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-sm text-sand" />
             <input name="sale_percent" type="number" min={0} max={100} step="1" placeholder="Sale % off" className="rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-sm text-sand" />
           </div>
-          <input
-            name="image"
-            type="file"
-            accept="image/*"
-            className="rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-sm text-sand"
-          />
+          <div className="relative">
+            <input
+              name="image"
+              type="file"
+              accept="image/*"
+              className="absolute inset-0 h-full w-full opacity-0 cursor-pointer"
+              id="product-image-upload"
+            />
+            <label
+              htmlFor="product-image-upload"
+              className="block rounded-2xl border border-gold/20 bg-obsidian/70 px-4 py-3 text-sm text-sand text-center cursor-pointer hover:bg-obsidian hover:border-gold/40 transition"
+            >
+              📎 Upload Product Image
+            </label>
+          </div>
           <textarea
             name="description_en"
             placeholder={labels.descriptionEn}

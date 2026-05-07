@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { copy } from "@/lib/i18n";
 import type { Product } from "@/lib/types";
 import { formatCurrency } from "@/lib/format";
@@ -26,10 +25,10 @@ export default function ProductCard({ product }: ProductCardProps) {
         : "";
 
   return (
-    <div className="group flex flex-col overflow-hidden rounded-3xl border border-gold/15 bg-stone/80 p-4 shadow-(--shadow) hover:border-gold/30 transition">
+    <div className="group flex flex-col overflow-hidden rounded-3xl border-2 border-gold/20 bg-stone/80 p-4 shadow-lg hover:shadow-2xl hover:border-gold/40 transition">
       <button
         onClick={() => setShowImageModal(true)}
-        className="relative aspect-4/5 overflow-hidden rounded-2xl bg-ink/40 cursor-pointer hover:opacity-90 transition"
+        className="relative aspect-4/5 overflow-hidden rounded-2xl bg-ink/40 cursor-pointer hover:opacity-95 transition group-hover:border-2 group-hover:border-gold/20 border-2 border-transparent"
         type="button"
         aria-label={locale === "ar" ? product.name_ar : product.name_en}
       >
@@ -48,25 +47,29 @@ export default function ProductCard({ product }: ProductCardProps) {
           </div>
         )}
         {seasonLabel && (
-          <span className="absolute left-2 top-2 sm:left-3 sm:top-3 rounded-full border border-gold/40 bg-obsidian/80 px-2 py-1 sm:px-3 sm:py-1 text-[0.55rem] sm:text-[0.6rem] uppercase tracking-[0.2em] text-gold">
-            {seasonLabel}
+          <span className="absolute left-2 top-2 sm:left-3 sm:top-3 rounded-full border border-gold/40 bg-obsidian/90 px-2.5 py-1.5 sm:px-3.5 sm:py-2 text-[0.6rem] sm:text-[0.65rem] uppercase tracking-[0.3em] text-gold font-semibold flex items-center gap-1">
+            {seasonLabel === t.sections.summer ? '𓇳' : '𓂀'} {seasonLabel}
           </span>
         )}
         {product.is_on_sale && (
-          <span className="absolute right-2 top-2 sm:right-3 sm:top-3 rounded-full bg-red-600 px-2 py-1 sm:px-3 sm:py-1 text-[0.55rem] sm:text-[0.6rem] uppercase tracking-[0.2em] text-white font-semibold">
-            Sale
+          <span className="absolute right-2 top-2 sm:right-3 sm:top-3 rounded-full bg-red-600 px-2.5 py-1.5 sm:px-3.5 sm:py-2 text-[0.6rem] sm:text-[0.65rem] uppercase tracking-[0.3em] text-white font-bold flex items-center gap-1">
+            𓆣 Sale
           </span>
         )}
       </button>
-      <div className="mt-3 flex flex-1 flex-col gap-2 sm:mt-4 sm:gap-3">
-        <div className="text-lg sm:text-xl font-semibold text-sand line-clamp-2">
-          {locale === "ar" ? product.name_ar : product.name_en}
+      <div className="mt-3 flex flex-1 flex-col gap-2.5 sm:mt-4 sm:gap-3">
+        <div className="flex items-start justify-between gap-2">
+          <div className="text-lg sm:text-xl font-semibold text-sand line-clamp-2 flex-1">
+            {locale === "ar" ? product.name_ar : product.name_en}
+          </div>
+          <span className="text-xl sm:text-2xl mt-0.5">𓋹</span>
         </div>
         <div className="text-xs sm:text-sm text-sand/70 line-clamp-2">
           {locale === "ar" ? product.description_ar : product.description_en}
         </div>
         <div className="mt-auto flex flex-col gap-2">
-          <div className="text-base sm:text-lg font-semibold text-gold">
+          <div className="flex items-center gap-2 text-base sm:text-lg font-semibold text-gold">
+            <span>𓂀</span>
             {product.is_on_sale ? (
               <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-2">
                 <span className="text-xs sm:text-sm text-sand/60 line-through">
@@ -83,21 +86,12 @@ export default function ProductCard({ product }: ProductCardProps) {
               formatCurrency(product.price, locale)
             )}
           </div>
-          <div className="flex w-full gap-2 text-xs uppercase tracking-[0.2em] text-sand">
-            <Link
-              href={`/product/${product.slug}`}
-              className="flex-1 rounded-full border border-gold/30 px-2.5 py-2 sm:px-3 sm:py-2.5 transition hover:bg-gold/10 hover:text-gold sm:text-sm font-semibold inline-flex items-center justify-center"
-            >
-              {t.products.details}
-            </Link>
-            <button
-              type="button"
-              onClick={() => addItem(product, 1)}
-              className="flex-1 rounded-full bg-gold px-2.5 py-2 sm:px-3 sm:py-2.5 text-ink sm:text-sm font-semibold transition hover:bg-gold/90 inline-flex items-center justify-center"
-            >
-              {t.products.order}
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => addItem(product, 1)}
+            className="w-full rounded-full bg-gold px-3 py-2.5 sm:px-4 sm:py-3 text-ink text-xs sm:text-sm uppercase tracking-[0.2em] font-semibold transition hover:bg-gold/90 inline-flex items-center justify-center gap-1">
+            {t.products.order}
+          </button>
         </div>
       </div>
 

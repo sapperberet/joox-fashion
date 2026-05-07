@@ -124,7 +124,7 @@ export default function HomePageClient({
           <div className="mx-auto flex max-w-6xl flex-col gap-6 sm:gap-8">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
               <h2 className="font-display text-2xl sm:text-3xl md:text-4xl tracking-[0.2em] text-gold">
-                👑 {t.nav.collections} 👑
+                𓋹 {t.nav.collections} 𓋹
               </h2>
               <p className="text-xs sm:text-sm uppercase tracking-[0.3em] text-sand/60">
                 ◇ {t.hero.eyebrow} ◇
@@ -137,7 +137,7 @@ export default function HomePageClient({
               >
                 <div className="flex items-center justify-between gap-2">
                   <h3 className="font-display text-lg sm:text-2xl md:text-3xl tracking-[0.2em] text-gold">
-                    ☀️ {t.sections.summer} ☀️
+                    𓇳 {t.sections.summer} 𓇳
                   </h3>
                   <span className="text-xs sm:text-sm uppercase tracking-[0.3em] text-sand/60 shrink-0">
                     ◇ 01 ◇
@@ -160,7 +160,7 @@ export default function HomePageClient({
               >
                 <div className="flex items-center justify-between gap-2">
                   <h3 className="font-display text-lg sm:text-2xl md:text-3xl tracking-[0.2em] text-gold">
-                    ❄️ {t.sections.winter} ❄️
+                    𓂀 {t.sections.winter} 𓂀
                   </h3>
                   <span className="text-xs sm:text-sm uppercase tracking-[0.3em] text-sand/60 shrink-0">
                     ◇ 02 ◇
@@ -185,7 +185,7 @@ export default function HomePageClient({
           <div className="mx-auto flex max-w-6xl flex-col gap-6 sm:gap-8">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
               <h2 className="font-display text-2xl sm:text-3xl md:text-4xl tracking-[0.2em] text-gold">
-                ✨ {t.sections.featured} ✨
+                𓋹 {t.sections.featured} 𓋹
               </h2>
               <Link
                 href="/products"

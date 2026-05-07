@@ -320,39 +320,43 @@ export async function createOrder(formData: FormData) {
     .map((item) => `${item.name_en} x${item.quantity}`)
     .join(", ");
 
-  const codAmount = paymentMethod === "cod" ? total : 0;
-  const bostaDelivery = await createBostaDelivery({
-    orderId,
-    customerName: name,
-    phone,
-    notes,
-    codAmount,
-    goodsValue: subtotal,
-    itemsCount,
-    itemsDescription,
-    address: {
-      city,
-      district,
-      firstLine: address,
-      secondLine: landmark || null,
-      buildingNumber: buildingNumber || null,
-      floor: floor || null,
-      apartment: apartment || null,
-    },
-  });
+  // For wallet payments, wait for admin verification before creating delivery
+  // For COD, create delivery immediately
+  if (paymentMethod === "cod") {
+    const codAmount = total;
+    const bostaDelivery = await createBostaDelivery({
+      orderId,
+      customerName: name,
+      phone,
+      notes,
+      codAmount,
+      goodsValue: subtotal,
+      itemsCount,
+      itemsDescription,
+      address: {
+        city,
+        district,
+        firstLine: address,
+        secondLine: landmark || null,
+        buildingNumber: buildingNumber || null,
+        floor: floor || null,
+        apartment: apartment || null,
+      },
+    });
 
-  if (bostaDelivery) {
-    const shippingState = bostaDelivery.error ? "failed" : bostaDelivery.state || null;
-    await supabase
-      .from("orders")
-      .update({
-        shipping_provider: "bosta",
-        shipping_tracking_number: bostaDelivery.trackingNumber || null,
-        shipping_reference: bostaDelivery.businessReference || null,
-        shipping_state: shippingState,
-        shipping_error: bostaDelivery.error || null,
-      })
-      .eq("id", orderId);
+    if (bostaDelivery) {
+      const shippingState = bostaDelivery.error ? "failed" : bostaDelivery.state || null;
+      await supabase
+        .from("orders")
+        .update({
+          shipping_provider: "bosta",
+          shipping_tracking_number: bostaDelivery.trackingNumber || null,
+          shipping_reference: bostaDelivery.businessReference || null,
+          shipping_state: shippingState,
+          shipping_error: bostaDelivery.error || null,
+        })
+        .eq("id", orderId);
+    }
   }
 
   revalidatePath("/atelier");
