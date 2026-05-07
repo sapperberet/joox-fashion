@@ -19,6 +19,9 @@ export type Product = {
   description_ar: string | null;
   price: number;
   image_url: string | null;
+  is_on_sale?: boolean | null;
+  sale_price?: number | null;
+  sale_percent?: number | null;
   is_active: boolean | null;
   featured: boolean | null;
   season: Season | null;

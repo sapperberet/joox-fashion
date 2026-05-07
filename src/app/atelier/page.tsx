@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { verifyAdminToken } from "@/lib/admin-auth";
 import { copy } from "@/lib/i18n";
 import { formatCurrency } from "@/lib/format";
@@ -12,6 +13,7 @@ import {
   logoutAdmin,
   toggleProductActive,
   updateOrderStatus,
+  updateProduct,
   createCoupon,
   updateCoupon,
   deleteCoupon,
@@ -35,9 +37,9 @@ async function getAdminData(): Promise<{
         .order("sort_order", { ascending: true }),
       supabase
         .from("products")
-        .select(
-          "id, category_id, name_en, name_ar, slug, description_en, description_ar, price, image_url, is_active, featured, season, stock_qty, min_order_qty, max_order_qty, order_multiple",
-        )
+          .select(
+            "id, category_id, name_en, name_ar, slug, description_en, description_ar, price, image_url, is_active, featured, season, stock_qty, min_order_qty, max_order_qty, order_multiple, is_on_sale, sale_price, sale_percent",
+          )
         .order("created_at", { ascending: false }),
       supabase
         .from("coupons")
@@ -206,7 +208,6 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
 
         <form
           action={createProduct}
-          encType="multipart/form-data"
           className="flex flex-col gap-4 rounded-3xl border border-gold/20 bg-stone/80 p-6"
         >
           <input type="hidden" name="admin_token" value={token} />
@@ -307,6 +308,14 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
               className="rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-sm text-sand"
             />
           </div>
+          <div className="grid gap-2 sm:grid-cols-3">
+            <label className="flex items-center gap-2">
+              <input type="checkbox" name="is_on_sale" value="true" className="h-4 w-4" />
+              <span className="text-xs text-sand/60">On sale</span>
+            </label>
+            <input name="sale_price" type="number" min={0} step="0.01" placeholder="Sale price" className="rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-sm text-sand" />
+            <input name="sale_percent" type="number" min={0} max={100} step="1" placeholder="Sale %" className="rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-sm text-sand" />
+          </div>
           <input
             name="image"
             type="file"
@@ -336,26 +345,36 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
           {labels.products}
         </h2>
         <div className="mt-4 space-y-3">
-          {products.map((product) => (
+              {products.map((product) => (
             <div
               key={product.id}
               className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-gold/10 bg-obsidian/70 px-4 py-3 text-sm text-sand"
             >
-              <div className="flex flex-col">
-                <span>{product.name_en}</span>
-                <span className="text-xs text-sand/60">
-                  {formatCurrency(product.price, "en")}
-                </span>
-                {product.stock_qty !== null && product.stock_qty !== undefined && (
-                  <span className="text-xs text-sand/40">
-                    {labels.stockQty}: {product.stock_qty}
+              <div className="flex items-center gap-4">
+                {product.image_url ? (
+                  <Image src={product.image_url} alt={product.name_en} width={64} height={80} className="rounded-md object-cover" />
+                ) : (
+                  <div className="h-16 w-12 rounded-md bg-obsidian/40" />
+                )}
+                <div className="flex flex-col">
+                  <span>{product.name_en}</span>
+                  <span className="text-xs text-sand/60">
+                    {formatCurrency(product.price, "en")}
                   </span>
-                )}
-                {(product.bundle_qty || product.bundle_price) && (
-                  <div className="text-xs text-sand/40">
-                    Bundle: {product.bundle_qty ?? '-'} for {product.bundle_price ? formatCurrency(product.bundle_price, 'en') : '-'}
-                  </div>
-                )}
+                  {product.stock_qty !== null && product.stock_qty !== undefined && (
+                    <span className="text-xs text-sand/40">
+                      {labels.stockQty}: {product.stock_qty}
+                    </span>
+                  )}
+                  {(product.bundle_qty || product.bundle_price) && (
+                    <div className="text-xs text-sand/40">
+                      Bundle: {product.bundle_qty ?? '-'} for {product.bundle_price ? formatCurrency(product.bundle_price, 'en') : '-'}
+                    </div>
+                  )}
+                  {product.is_on_sale && (
+                    <div className="text-xs text-red-400">On sale: {product.sale_price ? formatCurrency(product.sale_price,'en') : `${product.sale_percent}% off`}</div>
+                  )}
+                </div>
               </div>
               <div className="flex items-center gap-3 text-xs uppercase tracking-[0.2em]">
                 <span className="text-sand/60">
@@ -373,13 +392,25 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                     {labels.toggle}
                   </button>
                 </form>
-                <form action={deleteProduct}>
+                  <form action={deleteProduct} className="flex items-center justify-end">
                   <input type="hidden" name="admin_token" value={token} />
                   <input type="hidden" name="product_id" value={product.id} />
                   <button className="rounded-full border border-gold/30 px-3 py-2 text-gold">
                     {labels.delete}
                   </button>
                 </form>
+                    <form action={updateProduct} className="flex items-center gap-2">
+                      <input type="hidden" name="admin_token" value={token} />
+                      <input type="hidden" name="product_id" value={product.id} />
+                      <input name="stock_qty" defaultValue={product.stock_qty ?? ''} type="number" className="w-20 rounded-2xl border border-gold/20 bg-obsidian px-2 py-1 text-xs text-sand" />
+                      <label className="flex items-center gap-1 text-xs">
+                        <input type="checkbox" name="is_on_sale" value="true" defaultChecked={!!product.is_on_sale} />
+                        <span>Sale</span>
+                      </label>
+                      <input name="sale_price" defaultValue={product.sale_price ?? ''} type="number" step="0.01" placeholder="Sale" className="w-24 rounded-2xl border border-gold/20 bg-obsidian px-2 py-1 text-xs text-sand" />
+                      <input name="sale_percent" defaultValue={product.sale_percent ?? ''} type="number" step="1" placeholder="%" className="w-16 rounded-2xl border border-gold/20 bg-obsidian px-2 py-1 text-xs text-sand" />
+                      <button className="rounded-full border border-gold/30 px-3 py-2 text-gold">Update</button>
+                    </form>
               </div>
             </div>
           ))}

@@ -116,6 +116,12 @@ export async function createProduct(formData: FormData) {
   const bundlePriceValue = bundlePriceRaw ? Number(bundlePriceRaw) : NaN;
   const bundlePrice = Number.isFinite(bundlePriceValue) ? Math.max(bundlePriceValue, 0) : null;
   const image = formData.get("image") as File | null;
+  const isOnSaleRaw = String(formData.get("is_on_sale") ?? "").trim();
+  const is_on_sale = isOnSaleRaw === "true";
+  const salePriceRaw = String(formData.get("sale_price") ?? "").trim();
+  const sale_price = salePriceRaw ? Number(salePriceRaw) : null;
+  const salePercentRaw = String(formData.get("sale_percent") ?? "").trim();
+  const sale_percent = salePercentRaw ? Number(salePercentRaw) : null;
 
   if (!nameEn || !slug || price <= 0) {
     return;
@@ -153,6 +159,9 @@ export async function createProduct(formData: FormData) {
     image_url: imageUrl,
     season: season || null,
     is_active: true,
+    is_on_sale: is_on_sale,
+    sale_price: sale_price,
+    sale_percent: sale_percent,
     featured: false,
     stock_qty: stockQty,
     min_order_qty: minOrderQty,
@@ -272,6 +281,29 @@ export async function toggleProductActive(formData: FormData) {
     .update({ is_active: nextState === "true" })
     .eq("id", id);
 
+  revalidatePath(siteConfig.adminRoute);
+  revalidatePath("/");
+}
+
+export async function updateProduct(formData: FormData) {
+  requireAdmin(formData);
+  const supabase = getSupabaseAdmin();
+  const id = String(formData.get("product_id") ?? "").trim();
+  if (!id) return;
+
+  const updates: Record<string, unknown> = {};
+  const stockRaw = String(formData.get("stock_qty") ?? "").trim();
+  if (stockRaw) updates.stock_qty = Number(stockRaw);
+  const isOnSaleRaw = String(formData.get("is_on_sale") ?? "").trim();
+  if (isOnSaleRaw) updates.is_on_sale = isOnSaleRaw === "true";
+  const salePriceRaw = String(formData.get("sale_price") ?? "").trim();
+  if (salePriceRaw) updates.sale_price = Number(salePriceRaw);
+  const salePercentRaw = String(formData.get("sale_percent") ?? "").trim();
+  if (salePercentRaw) updates.sale_percent = Number(salePercentRaw);
+
+  if (!Object.keys(updates).length) return;
+
+  await supabase.from("products").update(updates).eq("id", id);
   revalidatePath(siteConfig.adminRoute);
   revalidatePath("/");
 }

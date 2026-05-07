@@ -130,70 +130,70 @@ export default function CheckoutClient({ product }: CheckoutClientProps) {
   return (
     <div className="relative">
       <SiteHeader />
-      <main className="mx-auto grid max-w-5xl gap-10 px-6 py-16 lg:grid-cols-[1.1fr_0.9fr]">
+      <main className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-8 sm:gap-10 sm:px-6 sm:py-16 lg:grid lg:grid-cols-[1.1fr_0.9fr]">
         <form
           action={handleSubmit}
-          className="flex flex-col gap-6 rounded-3xl border border-gold/20 bg-stone/80 p-8 temple-panel"
+          className="flex flex-col gap-4 rounded-3xl border border-gold/20 bg-stone/80 p-4 sm:gap-6 sm:p-8 temple-panel"
         >
           <div>
             <p className="text-xs uppercase tracking-[0.4em] text-gold/80">{t.checkout.subtitle}</p>
-            <h1 className="font-display text-3xl tracking-[0.2em] text-gold">{t.checkout.title}</h1>
+            <h1 className="font-display text-2xl sm:text-3xl tracking-[0.2em] text-gold">{t.checkout.title}</h1>
           </div>
 
-          <div className="grid gap-4">
+          <div className="grid gap-3 sm:gap-4">
             <div>
-              <label className="text-xs uppercase tracking-[0.2em] text-sand/70">{t.checkout.name}</label>
-              <input name="name" required className="mt-2 w-full rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-sm text-sand" />
+              <label className="text-xs uppercase tracking-[0.2em] text-sand/70 block mb-2">{t.checkout.name}</label>
+              <input name="name" required className="w-full rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-sm text-sand placeholder:text-sand/40 focus:outline-none focus:border-gold/60 focus:ring-1 focus:ring-gold/30 transition" placeholder={t.checkout.name} />
             </div>
             <div>
-              <label className="text-xs uppercase tracking-[0.2em] text-sand/70">{t.checkout.phone}</label>
-              <input name="phone" required className="mt-2 w-full rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-sm text-sand" />
+              <label className="text-xs uppercase tracking-[0.2em] text-sand/70 block mb-2">{t.checkout.phone}</label>
+              <input name="phone" required type="tel" className="w-full rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-sm text-sand placeholder:text-sand/40 focus:outline-none focus:border-gold/60 focus:ring-1 focus:ring-gold/30 transition" placeholder={t.checkout.phone} />
             </div>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
               <div>
-                <label className="text-xs uppercase tracking-[0.2em] text-sand/70">{t.checkout.city}</label>
-                <input name="city" required className="mt-2 w-full rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-sm text-sand" />
+                <label className="text-xs uppercase tracking-[0.2em] text-sand/70 block mb-2">{t.checkout.city}</label>
+                <input name="city" required className="w-full rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-sm text-sand placeholder:text-sand/40 focus:outline-none focus:border-gold/60 focus:ring-1 focus:ring-gold/30 transition" placeholder={t.checkout.city} />
               </div>
               <div>
-                <label className="text-xs uppercase tracking-[0.2em] text-sand/70">{t.checkout.address}</label>
-                <input name="address" required className="mt-2 w-full rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-sm text-sand" />
-              </div>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label className="text-xs uppercase tracking-[0.2em] text-sand/70">{t.checkout.district}</label>
-                <input name="district" required className="mt-2 w-full rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-sm text-sand" />
-              </div>
-              <div>
-                <label className="text-xs uppercase tracking-[0.2em] text-sand/70">{t.checkout.landmark}</label>
-                <input name="landmark" className="mt-2 w-full rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-sm text-sand" />
+                <label className="text-xs uppercase tracking-[0.2em] text-sand/70 block mb-2">{t.checkout.address}</label>
+                <input name="address" required className="w-full rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-sm text-sand placeholder:text-sand/40 focus:outline-none focus:border-gold/60 focus:ring-1 focus:ring-gold/30 transition" placeholder={t.checkout.address} />
               </div>
             </div>
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
               <div>
-                <label className="text-xs uppercase tracking-[0.2em] text-sand/70">{t.checkout.building}</label>
-                <input name="building_number" className="mt-2 w-full rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-sm text-sand" />
+                <label className="text-xs uppercase tracking-[0.2em] text-sand/70 block mb-2">{t.checkout.district}</label>
+                <input name="district" required className="w-full rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-sm text-sand placeholder:text-sand/40 focus:outline-none focus:border-gold/60 focus:ring-1 focus:ring-gold/30 transition" placeholder={t.checkout.district} />
               </div>
               <div>
-                <label className="text-xs uppercase tracking-[0.2em] text-sand/70">{t.checkout.floor}</label>
-                <input name="floor" className="mt-2 w-full rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-sm text-sand" />
+                <label className="text-xs uppercase tracking-[0.2em] text-sand/70 block mb-2">{t.checkout.landmark}</label>
+                <input name="landmark" className="w-full rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-sm text-sand placeholder:text-sand/40 focus:outline-none focus:border-gold/60 focus:ring-1 focus:ring-gold/30 transition" placeholder={t.checkout.landmark} />
+              </div>
+            </div>
+            <div className="grid gap-3 sm:gap-4 sm:grid-cols-3">
+              <div>
+                <label className="text-xs uppercase tracking-[0.2em] text-sand/70 block mb-2">{t.checkout.building}</label>
+                <input name="building_number" type="number" className="w-full rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-sm text-sand placeholder:text-sand/40 focus:outline-none focus:border-gold/60 focus:ring-1 focus:ring-gold/30 transition" placeholder={t.checkout.building} />
               </div>
               <div>
-                <label className="text-xs uppercase tracking-[0.2em] text-sand/70">{t.checkout.apartment}</label>
-                <input name="apartment" className="mt-2 w-full rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-sm text-sand" />
+                <label className="text-xs uppercase tracking-[0.2em] text-sand/70 block mb-2">{t.checkout.floor}</label>
+                <input name="floor" type="number" className="w-full rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-sm text-sand placeholder:text-sand/40 focus:outline-none focus:border-gold/60 focus:ring-1 focus:ring-gold/30 transition" placeholder={t.checkout.floor} />
+              </div>
+              <div>
+                <label className="text-xs uppercase tracking-[0.2em] text-sand/70 block mb-2">{t.checkout.apartment}</label>
+                <input name="apartment" type="number" className="w-full rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-sm text-sand placeholder:text-sand/40 focus:outline-none focus:border-gold/60 focus:ring-1 focus:ring-gold/30 transition" placeholder={t.checkout.apartment} />
               </div>
             </div>
 
             {!useCartMode && !product && (
               <div>
-                <label className="text-xs uppercase tracking-[0.2em] text-sand/70">{t.checkout.items}</label>
-                <textarea name="items_detail" required rows={3} className="mt-2 w-full rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-sm text-sand" />
+                <label className="text-xs uppercase tracking-[0.2em] text-sand/70 block mb-2">{t.checkout.items}</label>
+                <textarea name="items_detail" required rows={3} className="w-full rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-sm text-sand placeholder:text-sand/40 focus:outline-none focus:border-gold/60 focus:ring-1 focus:ring-gold/30 transition resize-none" placeholder={t.checkout.items} />
               </div>
             )}
 
             <div>
-              <label className="text-xs uppercase tracking-[0.2em] text-sand/70">{t.checkout.notes}</label>
-              <textarea name="notes" rows={3} className="mt-2 w-full rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-sm text-sand" />
+              <label className="text-xs uppercase tracking-[0.2em] text-sand/70 block mb-2">{t.checkout.notes}</label>
+              <textarea name="notes" rows={2} className="w-full rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-sm text-sand placeholder:text-sand/40 focus:outline-none focus:border-gold/60 focus:ring-1 focus:ring-gold/30 transition resize-none" placeholder={t.checkout.notes} />
             </div>
           </div>
 

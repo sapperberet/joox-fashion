@@ -17,23 +17,25 @@ export default function ThankYouClient({ orderId }: ThankYouClientProps) {
   return (
     <div className="relative">
       <SiteHeader />
-      <main className="mx-auto flex max-w-4xl flex-col gap-6 px-6 py-20">
-        <div className="rounded-3xl border border-gold/20 bg-stone/80 p-10">
-          <p className="text-xs uppercase tracking-[0.4em] text-gold/80">
-            {t.thankYou.reference}
-          </p>
-          <h1 className="mt-4 font-display text-3xl tracking-[0.2em] text-gold">
-            {t.thankYou.title}
-          </h1>
-          <p className="mt-4 text-sand/70">{t.thankYou.body}</p>
+      <main className="mx-auto flex max-w-4xl flex-col gap-6 px-4 sm:px-6 py-8 sm:py-20">
+        <div className="rounded-3xl border border-gold/20 bg-stone/80 p-6 sm:p-10 space-y-4 sm:space-y-6">
+          <div>
+            <p className="text-xs uppercase tracking-[0.4em] text-gold/80">
+              {t.thankYou.reference}
+            </p>
+            <h1 className="mt-3 sm:mt-4 font-display text-2xl sm:text-3xl tracking-[0.2em] text-gold leading-tight">
+              {t.thankYou.title}
+            </h1>
+          </div>
+          <p className="text-sm sm:text-base text-sand/70 leading-relaxed">{t.thankYou.body}</p>
           {orderId && (
-            <div className="mt-6 rounded-2xl border border-gold/20 bg-obsidian/70 px-4 py-3 text-sm text-gold">
+            <div className="rounded-2xl border border-gold/20 bg-obsidian/70 px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gold font-mono break-all">
               {orderId}
             </div>
           )}
           <Link
             href="/"
-            className="mt-6 inline-flex rounded-full border border-gold/40 px-6 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-gold"
+            className="inline-flex rounded-full border border-gold/40 px-4 py-2.5 sm:px-6 sm:py-3 text-xs font-semibold uppercase tracking-[0.2em] text-gold transition hover:bg-gold/10"
           >
             {t.thankYou.cta}
           </Link>

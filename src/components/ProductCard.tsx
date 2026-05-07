@@ -24,14 +24,16 @@ export default function ProductCard({ product }: ProductCardProps) {
         : "";
 
   return (
-    <div className="group flex flex-col overflow-hidden rounded-3xl border border-gold/15 bg-stone/80 p-5 shadow-(--shadow)">
+    <div className="group flex flex-col overflow-hidden rounded-3xl border border-gold/15 bg-stone/80 p-4 shadow-(--shadow) hover:border-gold/30 transition">
       <div className="relative aspect-4/5 overflow-hidden rounded-2xl bg-ink/40">
         {product.image_url ? (
           <Image
             src={product.image_url}
             alt={locale === "ar" ? product.name_ar : product.name_en}
             fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
             className="object-cover transition duration-700 group-hover:scale-110"
+            priority={false}
           />
         ) : (
           <div className="flex h-full items-center justify-center text-xs uppercase tracking-[0.2em] text-sand/50">
@@ -39,33 +41,52 @@ export default function ProductCard({ product }: ProductCardProps) {
           </div>
         )}
         {seasonLabel && (
-          <span className="absolute left-3 top-3 rounded-full border border-gold/40 bg-obsidian/80 px-3 py-1 text-[0.6rem] uppercase tracking-[0.2em] text-gold">
+          <span className="absolute left-2 top-2 sm:left-3 sm:top-3 rounded-full border border-gold/40 bg-obsidian/80 px-2 py-1 sm:px-3 sm:py-1 text-[0.55rem] sm:text-[0.6rem] uppercase tracking-[0.2em] text-gold">
             {seasonLabel}
           </span>
         )}
+        {product.is_on_sale && (
+          <span className="absolute right-2 top-2 sm:right-3 sm:top-3 rounded-full bg-red-600 px-2 py-1 sm:px-3 sm:py-1 text-[0.55rem] sm:text-[0.6rem] uppercase tracking-[0.2em] text-white font-semibold">
+            Sale
+          </span>
+        )}
       </div>
-      <div className="mt-4 flex flex-1 flex-col gap-2">
-        <div className="text-lg font-semibold text-sand">
+      <div className="mt-3 flex flex-1 flex-col gap-1 sm:mt-4 sm:gap-2">
+        <div className="text-base sm:text-lg font-semibold text-sand line-clamp-2">
           {locale === "ar" ? product.name_ar : product.name_en}
         </div>
-        <div className="text-sm text-sand/70">
+        <div className="text-xs sm:text-sm text-sand/70 line-clamp-2">
           {locale === "ar" ? product.description_ar : product.description_en}
         </div>
-        <div className="mt-auto flex items-center justify-between">
-          <div className="text-base font-semibold text-gold">
-            {formatCurrency(product.price, locale)}
+        <div className="mt-auto flex items-center justify-between gap-2">
+          <div className="text-sm sm:text-base font-semibold text-gold">
+            {product.is_on_sale ? (
+              <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-2">
+                <span className="text-xs sm:text-sm text-sand/60 line-through">
+                  {formatCurrency(product.price, locale)}
+                </span>
+                <span>
+                  {formatCurrency(
+                    product.sale_price ?? Math.round((product.price * (100 - (product.sale_percent ?? 0))) / 100),
+                    locale,
+                  )}
+                </span>
+              </div>
+            ) : (
+              formatCurrency(product.price, locale)
+            )}
           </div>
-          <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-sand">
+          <div className="flex items-center gap-1 sm:gap-2 text-xs uppercase tracking-[0.2em] text-sand">
             <Link
               href={`/product/${product.slug}`}
-              className="rounded-full border border-gold/30 px-3 py-2 transition hover:bg-gold/10"
+              className="rounded-full border border-gold/30 px-2 py-1.5 sm:px-3 sm:py-2 transition hover:bg-gold/10 hover:text-gold text-[0.65rem] sm:text-xs"
             >
               {t.products.details}
             </Link>
             <button
               type="button"
               onClick={() => addItem(product, 1)}
-              className="rounded-full bg-gold px-3 py-2 text-ink"
+              className="rounded-full bg-gold px-2 py-1.5 sm:px-3 sm:py-2 text-ink text-[0.65rem] sm:text-xs font-semibold transition hover:bg-gold/90"
             >
               {t.products.order}
             </button>

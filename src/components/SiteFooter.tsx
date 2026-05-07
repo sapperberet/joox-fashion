@@ -9,35 +9,38 @@ export default function SiteFooter() {
   const t = copy[locale];
 
   return (
-    <footer className="border-t border-gold/10 bg-obsidian px-6 py-12 text-sand">
-      <div className="mx-auto flex max-w-6xl flex-col gap-6">
+    <footer className="border-t border-gold/10 bg-obsidian px-4 py-8 sm:px-6 sm:py-12 text-sand">
+      <div className="mx-auto flex max-w-6xl flex-col gap-6 sm:gap-8 md:gap-6">
         <div className="flex flex-col gap-2">
-          <div className="font-display text-xl tracking-[0.2em] text-gold">
+          <div className="font-display text-lg sm:text-xl tracking-[0.2em] text-gold">
             {siteConfig.brand}
           </div>
-          <p className="text-sm text-sand/70">{t.hero.subtitle}</p>
+          <p className="text-xs sm:text-sm text-sand/70 leading-relaxed">{t.hero.subtitle}</p>
         </div>
-        <div className="grid gap-4 text-sm md:grid-cols-3">
-          <div>
-            <div className="text-xs uppercase tracking-[0.2em] text-gold">
+        <div className="grid gap-4 text-xs sm:text-sm md:grid-cols-3 md:gap-6">
+          <div className="space-y-2">
+            <div className="text-xs uppercase tracking-[0.2em] text-gold font-semibold">
               {t.sections.payment}
             </div>
-            <p className="mt-2 text-sand/70">{t.payment.body}</p>
+            <p className="text-sand/70 leading-relaxed text-xs sm:text-sm">{t.payment.body}</p>
           </div>
-          <div>
-            <div className="text-xs uppercase tracking-[0.2em] text-gold">
+          <div className="space-y-2">
+            <div className="text-xs uppercase tracking-[0.2em] text-gold font-semibold">
               {t.sections.policy}
             </div>
-            <p className="mt-2 text-sand/70">{t.policy.body}</p>
+            <p className="text-sand/70 leading-relaxed text-xs sm:text-sm">{t.policy.body}</p>
           </div>
-          <div>
-            <div className="text-xs uppercase tracking-[0.2em] text-gold">
+          <div className="space-y-2">
+            <div className="text-xs uppercase tracking-[0.2em] text-gold font-semibold">
               {t.sections.wholesale}
             </div>
-            <p className="mt-2 text-sand/70">
+            <p className="text-sand/70 leading-relaxed text-xs sm:text-sm">
               {t.wholesale.body} ({siteConfig.whatsapp.wholesale})
             </p>
           </div>
+        </div>
+        <div className="border-t border-gold/10 pt-4 sm:pt-6 mt-4 sm:mt-6">
+          <p className="text-xs text-sand/60 text-center">&copy; {new Date().getFullYear()} {siteConfig.brand}. All rights reserved.</p>
         </div>
       </div>
     </footer>

@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
 export async function POST(request: Request) {
-  const { code } = (await request.json()) as { code?: string };
+  const body = (await request.json()) as { code?: string; subtotal?: number };
+  const { code, subtotal: rawSubtotal } = body;
   const normalized = (code ?? "").trim().toUpperCase();
 
   if (!normalized) {
@@ -40,6 +41,15 @@ export async function POST(request: Request) {
     data.used_count !== null &&
     data.used_count !== undefined &&
     data.used_count >= data.max_uses
+  ) {
+    return NextResponse.json({ valid: false }, { status: 404 });
+  }
+
+  const subtotal = Number(rawSubtotal ?? 0);
+  if (
+    data.min_subtotal !== null &&
+    data.min_subtotal !== undefined &&
+    (!Number.isFinite(subtotal) || subtotal < Number(data.min_subtotal))
   ) {
     return NextResponse.json({ valid: false }, { status: 404 });
   }

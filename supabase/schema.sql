@@ -171,3 +171,6 @@ alter table public.products add column if not exists max_order_qty integer;
 alter table public.products add column if not exists order_multiple integer default 1;
 alter table public.products add column if not exists bundle_qty integer;
 alter table public.products add column if not exists bundle_price numeric;
+alter table public.products add column if not exists is_on_sale boolean default false;
+alter table public.products add column if not exists sale_price numeric;
+alter table public.products add column if not exists sale_percent integer;

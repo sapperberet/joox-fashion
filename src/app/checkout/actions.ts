@@ -66,7 +66,7 @@ async function resolveCoupon(
   supabase: ReturnType<typeof getSupabaseAdmin>,
   code: string | null,
   subtotal: number,
-): Promise<{ coupon: CartCoupon | null; couponDiscount: number }> {
+): Promise<{ coupon: (CartCoupon & { max_uses?: number | null; used_count?: number | null }) | null; couponDiscount: number }> {
   if (!code) {
     return { coupon: null, couponDiscount: 0 };
   }
@@ -95,11 +95,13 @@ async function resolveCoupon(
     return { coupon: null, couponDiscount: 0 };
   }
 
-  const coupon: CartCoupon = {
+  const coupon: (CartCoupon & { max_uses?: number | null; used_count?: number | null }) = {
     code: data.code,
     type: data.type,
     value: Number(data.value ?? 0),
     min_subtotal: data.min_subtotal ?? null,
+    max_uses: data.max_uses ?? null,
+    used_count: data.used_count ?? null,
   };
 
   const minSubtotal = coupon.min_subtotal ?? 0;
@@ -248,6 +250,31 @@ export async function createOrder(formData: FormData) {
     line_total: line.total,
   }));
 
+  // If a coupon is being applied, try to reserve/increment its usage atomically before creating the order
+  if (coupon?.code) {
+    try {
+      if (typeof coupon.max_uses === "number") {
+        // only increment if used_count < max_uses
+        const { data: updated, error: updateError } = await supabase
+          .from("coupons")
+          .update({ used_count: (coupon.used_count ?? 0) + 1 })
+          .eq("code", coupon.code)
+          .lte("used_count", (coupon.max_uses as number) - 1);
+
+        if (updateError || !updated || (Array.isArray(updated) && updated.length === 0)) {
+          return { success: false, error: "Coupon is no longer available." };
+        }
+      } else {
+        await supabase
+          .from("coupons")
+          .update({ used_count: (coupon.used_count ?? 0) + 1 })
+          .eq("code", coupon.code);
+      }
+    } catch (err) {
+      return { success: false, error: "Failed to reserve coupon." };
+    }
+  }
+
   const { error: insertError } = await supabase.from("orders").insert({
     id: orderId,
     customer_name: name,
@@ -283,20 +310,7 @@ export async function createOrder(formData: FormData) {
     }
   }
 
-  if (coupon?.code) {
-    const { data: currentCoupon } = await supabase
-      .from("coupons")
-      .select("used_count")
-      .eq("code", coupon.code)
-      .single();
-
-    if (currentCoupon) {
-      await supabase
-        .from("coupons")
-        .update({ used_count: (currentCoupon.used_count ?? 0) + 1 })
-        .eq("code", coupon.code);
-    }
-  }
+  // coupon usage already reserved above before inserting the order
 
   const itemsCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
   const itemsDescription = cartItems
