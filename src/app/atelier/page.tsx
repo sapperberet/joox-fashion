@@ -201,7 +201,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
             placeholder="Sort order"
             className="rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-sm text-sand"
           />
-          <button className="rounded-full bg-gold px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-ink">
+          <button className="rounded-full bg-gold px-6 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-ink transition hover:bg-gold/90 hover:shadow-lg inline-flex items-center justify-center w-full">
             {labels.createCategory}
           </button>
         </form>
@@ -296,7 +296,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
               type="number"
               min={0}
               step="1"
-              placeholder={labels.bundleQty ?? "Bundle qty"}
+              placeholder={labels.bundleQty}
               className="rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-sm text-sand"
             />
             <input
@@ -304,17 +304,17 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
               type="number"
               min={0}
               step="0.01"
-              placeholder={labels.bundlePrice ?? "Bundle price"}
+              placeholder={labels.bundlePrice}
               className="rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-sm text-sand"
             />
           </div>
           <div className="grid gap-2 sm:grid-cols-3">
             <label className="flex items-center gap-2">
               <input type="checkbox" name="is_on_sale" value="true" className="h-4 w-4" />
-              <span className="text-xs text-sand/60">On sale</span>
+              <span className="text-xs text-sand/60">Sale</span>
             </label>
-            <input name="sale_price" type="number" min={0} step="0.01" placeholder="Sale price" className="rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-sm text-sand" />
-            <input name="sale_percent" type="number" min={0} max={100} step="1" placeholder="Sale %" className="rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-sm text-sand" />
+            <input name="sale_price" type="number" min={0} step="0.01" placeholder="Sale price (EGP)" className="rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-sm text-sand" />
+            <input name="sale_percent" type="number" min={0} max={100} step="1" placeholder="Sale % off" className="rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-sm text-sand" />
           </div>
           <input
             name="image"
@@ -334,7 +334,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
             rows={2}
             className="rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-sm text-sand"
           />
-          <button className="rounded-full bg-gold px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-ink">
+          <button className="rounded-full bg-gold px-6 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-ink transition hover:bg-gold/90 hover:shadow-lg inline-flex items-center justify-center w-full">
             {labels.createProduct}
           </button>
         </form>

@@ -19,13 +19,13 @@ export default function FloatingWhatsapp() {
       href={link}
       target="_blank"
       rel="noreferrer"
-      className={`fixed bottom-6 z-50 inline-flex items-center gap-3 rounded-full bg-emerald px-5 py-3 text-sm font-semibold text-ink shadow-2xl transition hover:scale-[1.02] ${
+      className={`fixed bottom-6 z-50 inline-flex items-center gap-2 rounded-full bg-emerald px-4 py-3 text-lg font-semibold text-ink shadow-2xl transition hover:scale-[1.05] ${
         locale === "ar" ? "left-6" : "right-6"
       }`}
       aria-label={t.sections.wholesale}
     >
-      <span className="h-2 w-2 rounded-full bg-ink" />
-      {t.wholesale.cta}
+      <span>💬</span>
+      <span className="text-xs">{t.wholesale.cta}</span>
     </a>
   );
 }

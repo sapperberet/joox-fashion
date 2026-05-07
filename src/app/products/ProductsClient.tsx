@@ -63,7 +63,7 @@ export default function ProductsClient({
       <main className="mx-auto flex max-w-6xl flex-col gap-8 sm:gap-12 px-4 sm:px-6 py-8 sm:py-16">
         <div className="flex flex-col gap-2 sm:gap-3">
           <p className="text-xs sm:text-sm uppercase tracking-[0.4em] text-gold/80">
-            {t.nav.products}
+            ◆ {t.nav.products} ◆
           </p>
           <h1 className="font-display text-3xl sm:text-4xl md:text-5xl tracking-[0.2em] text-gold">
             {t.nav.products}

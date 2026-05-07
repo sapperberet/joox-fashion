@@ -67,7 +67,7 @@ export default function HomePageClient({
           <div className="mx-auto grid max-w-6xl items-center gap-6 sm:gap-8 md:gap-12 lg:grid-cols-[1.1fr_0.9fr]">
             <div className="space-y-4 sm:space-y-6">
               <p className="text-xs uppercase tracking-[0.5em] text-gold/80">
-                {t.hero.eyebrow}
+                ◇ {t.hero.eyebrow} ◇
               </p>
               <h1 className="text-balance font-display text-3xl sm:text-5xl md:text-6xl tracking-[0.2em] text-gold leading-tight">
                 {t.hero.title}

@@ -9,9 +9,10 @@ export default function LanguageToggle() {
     <button
       type="button"
       onClick={() => setLocale(locale === "en" ? "ar" : "en")}
-      className="inline-flex items-center gap-2 rounded-full border border-gold/40 bg-black/20 px-4 py-2 text-xs uppercase tracking-[0.2em] text-gold transition hover:bg-black/40"
+      title={locale === "en" ? "العربية" : "English"}
+      className="inline-flex items-center justify-center rounded-full border border-gold/40 bg-black/20 w-10 h-10 text-xl transition hover:bg-black/40 hover:border-gold/60"
     >
-      {locale === "en" ? "AR" : "EN"}
+      {locale === "en" ? "🇪🇬" : "🇬🇧"}
     </button>
   );
 }
