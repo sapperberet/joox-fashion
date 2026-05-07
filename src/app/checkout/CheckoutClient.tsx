@@ -90,7 +90,10 @@ export default function CheckoutClient({ product }: CheckoutClientProps) {
   const total = Math.max(subtotal - walletDiscount - couponDiscount, 0);
 
   const isOutOfStock = useCartMode
-    ? items.some((item) => item.stock_qty !== null && (item.stock_qty <= 0 || item.quantity > item.stock_qty))
+    ? items.some((item) => {
+        const stockQty = item.stock_qty ?? null;
+        return stockQty !== null && (stockQty <= 0 || item.quantity > stockQty);
+      })
     : stockQty !== null && (stockQty <= 0 || quantity > stockQty);
 
   const handleSubmit = async (formData: FormData) => {

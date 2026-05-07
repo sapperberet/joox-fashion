@@ -194,12 +194,13 @@ export async function createOrder(formData: FormData) {
 
     const normalizedQty = normalizeQuantity(item, entry.quantity);
     item.quantity = normalizedQty;
+    const stockQty = item.stock_qty ?? null;
 
-    if (item.stock_qty !== null && item.stock_qty <= 0) {
+    if (stockQty !== null && stockQty <= 0) {
       return { success: false, error: `${item.name_en} is out of stock.` };
     }
 
-    if (item.stock_qty !== null && item.quantity > item.stock_qty) {
+    if (stockQty !== null && item.quantity > stockQty) {
       return { success: false, error: `Insufficient stock for ${item.name_en}.` };
     }
 
@@ -259,9 +260,10 @@ export async function createOrder(formData: FormData) {
           .from("coupons")
           .update({ used_count: (coupon.used_count ?? 0) + 1 })
           .eq("code", coupon.code)
-          .lte("used_count", (coupon.max_uses as number) - 1);
+          .lte("used_count", (coupon.max_uses as number) - 1)
+          .select("id");
 
-        if (updateError || !updated || (Array.isArray(updated) && updated.length === 0)) {
+        if (updateError || !updated?.length) {
           return { success: false, error: "Coupon is no longer available." };
         }
       } else {
@@ -304,8 +306,9 @@ export async function createOrder(formData: FormData) {
   }
 
   for (const item of cartItems) {
-    if (item.stock_qty !== null) {
-      const nextStock = Math.max(item.stock_qty - item.quantity, 0);
+    const stockQty = item.stock_qty ?? null;
+    if (stockQty !== null) {
+      const nextStock = Math.max(stockQty - item.quantity, 0);
       await supabase.from("products").update({ stock_qty: nextStock }).eq("id", item.id);
     }
   }
