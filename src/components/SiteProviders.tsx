@@ -8,6 +8,7 @@ import {
   useState,
 } from "react";
 import type { Locale } from "@/lib/i18n";
+import { CartProvider } from "./CartProvider";
 
 type LanguageContextValue = {
   locale: Locale;
@@ -36,7 +37,7 @@ export function SiteProviders({ children }: { children: React.ReactNode }) {
 
   return (
     <LanguageContext.Provider value={value}>
-      {children}
+      <CartProvider>{children}</CartProvider>
     </LanguageContext.Provider>
   );
 }

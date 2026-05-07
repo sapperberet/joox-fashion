@@ -17,9 +17,9 @@ const bodyFont = El_Messiri({
 });
 
 export const metadata: Metadata = {
-  title: "Jox Fashion | Egyptian Street Luxury",
+  title: "Joox Fashion | Egyptian Street Luxury",
   description:
-    "Jox Fashion blends Egyptian-inspired luxury with modern streetwear.",
+    "Joox Fashion blends Egyptian-inspired luxury with modern streetwear.",
 };
 
 export default function RootLayout({
@@ -32,7 +32,7 @@ export default function RootLayout({
       lang="en"
       className={`${displayFont.variable} ${bodyFont.variable} h-full antialiased`}
     >
-      <body className="min-h-full bg-obsidian text-sand">
+      <body className="min-h-full bg-obsidian text-sand text-[1.03rem]">
         <SiteProviders>
           {children}
           <FloatingWhatsapp />

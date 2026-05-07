@@ -9,6 +9,7 @@ import { useLanguage } from "@/components/SiteProviders";
 import { copy } from "@/lib/i18n";
 import { formatCurrency } from "@/lib/format";
 import type { Product } from "@/lib/types";
+import { useCart } from "@/components/CartProvider";
 
 type ProductClientProps = {
   product: Product | null;
@@ -21,6 +22,7 @@ export default function ProductClient({
 }: ProductClientProps) {
   const { locale } = useLanguage();
   const t = copy[locale];
+  const { addItem } = useCart();
 
   if (!product) {
     return (
@@ -64,6 +66,13 @@ export default function ProductClient({
           <div className="text-2xl font-semibold text-gold">
             {formatCurrency(product.price, locale)}
           </div>
+          {product.stock_qty !== null && product.stock_qty !== undefined && (
+            <div className="text-xs uppercase tracking-[0.2em] text-sand/60">
+              {product.stock_qty <= 0
+                ? t.checkout.outOfStock
+                : `${t.checkout.total}: ${product.stock_qty}`}
+            </div>
+          )}
           <div className="flex flex-wrap gap-3">
             <Link
               href={`/checkout?product=${product.slug}`}
@@ -71,6 +80,13 @@ export default function ProductClient({
             >
               {t.products.order}
             </Link>
+            <button
+              type="button"
+              onClick={() => addItem(product, 1)}
+              className="rounded-full border border-gold/40 px-6 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-gold"
+            >
+              {t.nav.cart}
+            </button>
             <Link
               href="/products"
               className="rounded-full border border-gold/40 px-6 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-gold"

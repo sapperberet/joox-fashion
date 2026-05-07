@@ -40,16 +40,22 @@ export default function HomePageClient({
     (category) => category.season === "winter",
   );
 
-  const featuredProducts = products.filter((product) => product.featured);
+  const featuredProducts = products.filter(
+    (product) =>
+      product.featured &&
+      (product.stock_qty === null ||
+        product.stock_qty === undefined ||
+        product.stock_qty > 0),
+  );
   const spotlightProducts = featuredProducts.length
     ? featuredProducts.slice(0, 4)
-    : products.slice(0, 4);
+    : products.filter((product) => (product.stock_qty ?? 1) > 0).slice(0, 4);
 
   const wholesaleLink = toWhatsappLink(
     siteConfig.whatsapp.wholesale,
     locale === "ar"
       ? "طلب جملة من جوكس فاشون"
-      : "Wholesale inquiry for Jox Fashion",
+      : "Wholesale inquiry for Joox Fashion",
   );
 
   return (

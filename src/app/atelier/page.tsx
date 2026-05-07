@@ -12,6 +12,8 @@ import {
   logoutAdmin,
   toggleProductActive,
   updateOrderStatus,
+  createCoupon,
+  deleteCoupon,
 } from "./actions";
 
 const labels = copy.en.admin;
@@ -19,6 +21,7 @@ const labels = copy.en.admin;
 async function getAdminData(): Promise<{
   categories: Category[];
   products: Product[];
+  coupons: any[];
   orders: Order[];
 }> {
   const supabase = getSupabaseAdmin();
@@ -32,7 +35,7 @@ async function getAdminData(): Promise<{
       supabase
         .from("products")
         .select(
-          "id, category_id, name_en, name_ar, slug, description_en, description_ar, price, image_url, is_active, featured, season",
+          "id, category_id, name_en, name_ar, slug, description_en, description_ar, price, image_url, is_active, featured, season, stock_qty, min_order_qty, max_order_qty, order_multiple",
         )
         .order("created_at", { ascending: false }),
       supabase
@@ -47,6 +50,7 @@ async function getAdminData(): Promise<{
   return {
     categories: categories ?? [],
     products: products ?? [],
+    coupons: [],
     orders: orders ?? [],
   };
 }
@@ -128,6 +132,16 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
 
   const { categories, products, orders } = await getAdminData();
 
+  // fetch coupons server-side (separate so we can show them)
+  const supabase = getSupabaseAdmin();
+  const { data: couponsData } = await supabase
+    .from("coupons")
+    .select(
+      "id, code, type, value, min_subtotal, max_uses, used_count, starts_at, expires_at, is_active",
+    )
+    .order("created_at", { ascending: false });
+  const coupons = couponsData ?? [];
+
   return (
     <main className="mx-auto flex max-w-6xl flex-col gap-12 px-6 py-16">
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -176,6 +190,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
           <input
             name="sort_order"
             type="number"
+            min={0}
             placeholder="Sort order"
             className="rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-sm text-sand"
           />
@@ -230,9 +245,63 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
           <input
             name="price"
             type="number"
+            min={0}
+            step="1"
             placeholder={labels.price}
             className="rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-sm text-sand"
           />
+          <input
+            name="stock_qty"
+            type="number"
+            min={0}
+            step="1"
+            placeholder={labels.stockQty}
+            className="rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-sm text-sand"
+          />
+          <div className="grid gap-4 sm:grid-cols-3">
+            <input
+              name="min_order_qty"
+              type="number"
+              min={1}
+              step="1"
+              placeholder={labels.minOrderQty}
+              className="rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-sm text-sand"
+            />
+            <input
+              name="max_order_qty"
+              type="number"
+              min={1}
+              step="1"
+              placeholder={labels.maxOrderQty}
+              className="rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-sm text-sand"
+            />
+            <input
+              name="order_multiple"
+              type="number"
+              min={1}
+              step="1"
+              placeholder={labels.orderMultiple}
+              className="rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-sm text-sand"
+            />
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <input
+              name="bundle_qty"
+              type="number"
+              min={0}
+              step="1"
+              placeholder={labels.bundleQty ?? "Bundle qty"}
+              className="rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-sm text-sand"
+            />
+            <input
+              name="bundle_price"
+              type="number"
+              min={0}
+              step="0.01"
+              placeholder={labels.bundlePrice ?? "Bundle price"}
+              className="rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-sm text-sand"
+            />
+          </div>
           <input
             name="image"
             type="file"
@@ -272,6 +341,16 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                 <span className="text-xs text-sand/60">
                   {formatCurrency(product.price, "en")}
                 </span>
+                {product.stock_qty !== null && product.stock_qty !== undefined && (
+                  <span className="text-xs text-sand/40">
+                    {labels.stockQty}: {product.stock_qty}
+                  </span>
+                )}
+                {(product.bundle_qty || product.bundle_price) && (
+                  <div className="text-xs text-sand/40">
+                    Bundle: {product.bundle_qty ?? '-'} for {product.bundle_price ? formatCurrency(product.bundle_price, 'en') : '-'}
+                  </div>
+                )}
               </div>
               <div className="flex items-center gap-3 text-xs uppercase tracking-[0.2em]">
                 <span className="text-sand/60">
@@ -297,6 +376,53 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                   </button>
                 </form>
               </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="rounded-3xl border border-gold/20 bg-stone/80 p-6">
+        <h2 className="font-display text-xl tracking-[0.2em] text-gold">Coupons</h2>
+        <form action={createCoupon} className="mt-4 grid grid-cols-1 gap-2 md:grid-cols-4">
+          <input type="hidden" name="admin_token" value={token} />
+          <input name="code" placeholder="Code" className="rounded-2xl border border-gold/20 bg-obsidian px-3 py-2 text-sm text-sand" />
+          <select name="type" className="rounded-2xl border border-gold/20 bg-obsidian px-3 py-2 text-sm text-sand">
+            <option value="percent">Percent</option>
+            <option value="fixed">Fixed</option>
+          </select>
+          <input name="value" type="number" min={0} step="0.01" placeholder="Value" className="rounded-2xl border border-gold/20 bg-obsidian px-3 py-2 text-sm text-sand" />
+          <div className="flex gap-2">
+            <input name="min_subtotal" type="number" min={0} step="0.01" placeholder="Min subtotal" className="rounded-2xl border border-gold/20 bg-obsidian px-3 py-2 text-sm text-sand" />
+            <input name="max_uses" type="number" min={0} step="1" placeholder="Max uses" className="rounded-2xl border border-gold/20 bg-obsidian px-3 py-2 text-sm text-sand" />
+          </div>
+          <div className="flex gap-2">
+            <input name="starts_at" type="date" className="rounded-2xl border border-gold/20 bg-obsidian px-3 py-2 text-sm text-sand" />
+            <input name="expires_at" type="date" className="rounded-2xl border border-gold/20 bg-obsidian px-3 py-2 text-sm text-sand" />
+            <button className="rounded-full bg-gold px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-ink">Add</button>
+          </div>
+        </form>
+
+        <div className="mt-4 space-y-2">
+          {coupons.map((c) => (
+            <div key={c.id} className="grid grid-cols-1 gap-2 rounded-2xl border border-gold/10 bg-obsidian/70 px-4 py-3 text-sm text-sand md:grid-cols-3">
+              <div>
+                <div className="font-medium">{c.code}</div>
+                <div className="text-xs text-sand/60">{c.type} — {c.value}</div>
+                <div className="text-xs text-sand/60">Min: {c.min_subtotal ?? 0} • Uses: {c.used_count ?? 0}/{c.max_uses ?? '∞'}</div>
+                <div className="text-xs text-sand/60">{c.starts_at ? `From ${new Date(c.starts_at).toLocaleDateString()}` : ''} {c.expires_at ? `Until ${new Date(c.expires_at).toLocaleDateString()}` : ''}</div>
+              </div>
+              <form action={updateCoupon} className="flex items-center gap-2">
+                <input type="hidden" name="admin_token" value={token} />
+                <input type="hidden" name="coupon_id" value={c.id} />
+                <input name="code" defaultValue={c.code} className="rounded-2xl border border-gold/20 bg-obsidian px-3 py-2 text-sm text-sand" />
+                <input name="value" defaultValue={String(c.value)} type="number" step="0.01" className="rounded-2xl border border-gold/20 bg-obsidian px-3 py-2 text-sm text-sand" />
+                <button className="rounded-full border border-gold/30 px-3 py-2 text-gold">{labels.update}</button>
+              </form>
+              <form action={deleteCoupon} className="flex items-center justify-end">
+                <input type="hidden" name="admin_token" value={token} />
+                <input type="hidden" name="coupon_id" value={c.id} />
+                <button className="rounded-full border border-gold/30 px-3 py-2 text-gold">{labels.delete}</button>
+              </form>
             </div>
           ))}
         </div>

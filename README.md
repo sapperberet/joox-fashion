@@ -1,4 +1,4 @@
-# Jox Fashion
+# Joox Fashion
 
 Egyptian-inspired fashion storefront built with Next.js and Supabase.
 

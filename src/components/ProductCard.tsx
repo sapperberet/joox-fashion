@@ -6,6 +6,7 @@ import { copy } from "@/lib/i18n";
 import type { Product } from "@/lib/types";
 import { formatCurrency } from "@/lib/format";
 import { useLanguage } from "./SiteProviders";
+import { useCart } from "./CartProvider";
 
 type ProductCardProps = {
   product: Product;
@@ -14,6 +15,7 @@ type ProductCardProps = {
 export default function ProductCard({ product }: ProductCardProps) {
   const { locale } = useLanguage();
   const t = copy[locale];
+  const { addItem } = useCart();
   const seasonLabel =
     product.season === "summer"
       ? t.sections.summer
@@ -60,12 +62,13 @@ export default function ProductCard({ product }: ProductCardProps) {
             >
               {t.products.details}
             </Link>
-            <Link
-              href={`/checkout?product=${product.slug}`}
+            <button
+              type="button"
+              onClick={() => addItem(product, 1)}
               className="rounded-full bg-gold px-3 py-2 text-ink"
             >
               {t.products.order}
-            </Link>
+            </button>
           </div>
         </div>
       </div>

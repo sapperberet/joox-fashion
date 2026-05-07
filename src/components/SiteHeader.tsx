@@ -5,10 +5,13 @@ import { copy } from "@/lib/i18n";
 import { useLanguage } from "./SiteProviders";
 import LanguageToggle from "./LanguageToggle";
 import LogoLockup from "./LogoLockup";
+import { useCart } from "./CartProvider";
 
 export default function SiteHeader() {
   const { locale } = useLanguage();
   const t = copy[locale];
+  const { items } = useCart();
+  const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
     <header className="temple-header">
@@ -39,6 +42,17 @@ export default function SiteHeader() {
             className="hidden rounded-full border border-gold/40 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-gold transition hover:bg-gold/10 sm:inline-flex"
           >
             {t.nav.products}
+          </Link>
+          <Link
+            href="/cart"
+            className="relative hidden rounded-full border border-gold/40 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-gold transition hover:bg-gold/10 sm:inline-flex"
+          >
+            {t.nav.cart}
+            {itemCount > 0 && (
+              <span className="ml-2 rounded-full bg-gold px-2 py-0.5 text-[0.6rem] font-semibold uppercase tracking-[0.2em] text-ink">
+                {itemCount}
+              </span>
+            )}
           </Link>
           <Link
             href="/checkout"

@@ -42,7 +42,11 @@ export async function createCategory(formData: FormData) {
   const nameAr = String(formData.get("name_ar") ?? "").trim();
   const slug = String(formData.get("slug") ?? "").trim();
   const season = String(formData.get("season") ?? "").trim();
-  const sortOrder = Number(formData.get("sort_order") ?? 0);
+  const sortOrderRaw = String(formData.get("sort_order") ?? "").trim();
+  const sortOrderValue = sortOrderRaw ? Number(sortOrderRaw) : NaN;
+  const sortOrder = Number.isFinite(sortOrderValue)
+    ? Math.max(0, sortOrderValue)
+    : null;
 
   if (!nameEn || !slug) {
     return;
@@ -53,7 +57,7 @@ export async function createCategory(formData: FormData) {
     name_ar: nameAr,
     slug,
     season: season || null,
-    sort_order: Number.isFinite(sortOrder) ? sortOrder : null,
+    sort_order: sortOrder,
   });
 
   revalidatePath(siteConfig.adminRoute);
@@ -85,10 +89,35 @@ export async function createProduct(formData: FormData) {
   const descriptionEn = String(formData.get("description_en") ?? "").trim();
   const descriptionAr = String(formData.get("description_ar") ?? "").trim();
   const categoryId = String(formData.get("category_id") ?? "").trim();
-  const price = Number(formData.get("price") ?? 0);
+  const priceRaw = Number(formData.get("price") ?? 0);
+  const price = Number.isFinite(priceRaw) ? Math.max(priceRaw, 0) : 0;
+  const stockRaw = String(formData.get("stock_qty") ?? "").trim();
+  const stockValue = stockRaw ? Number(stockRaw) : NaN;
+  const stockQty = Number.isFinite(stockValue) ? Math.max(stockValue, 0) : null;
+  const minOrderRaw = String(formData.get("min_order_qty") ?? "").trim();
+  const minOrderValue = minOrderRaw ? Number(minOrderRaw) : NaN;
+  const minOrderQty = Number.isFinite(minOrderValue)
+    ? Math.max(minOrderValue, 1)
+    : 1;
+  const maxOrderRaw = String(formData.get("max_order_qty") ?? "").trim();
+  const maxOrderValue = maxOrderRaw ? Number(maxOrderRaw) : NaN;
+  const maxOrderQty = Number.isFinite(maxOrderValue)
+    ? Math.max(maxOrderValue, 1)
+    : null;
+  const multipleRaw = String(formData.get("order_multiple") ?? "").trim();
+  const multipleValue = multipleRaw ? Number(multipleRaw) : NaN;
+  const orderMultiple = Number.isFinite(multipleValue)
+    ? Math.max(multipleValue, 1)
+    : 1;
+  const bundleQtyRaw = String(formData.get("bundle_qty") ?? "").trim();
+  const bundleQtyValue = bundleQtyRaw ? Number(bundleQtyRaw) : NaN;
+  const bundleQty = Number.isFinite(bundleQtyValue) ? Math.max(bundleQtyValue, 0) : null;
+  const bundlePriceRaw = String(formData.get("bundle_price") ?? "").trim();
+  const bundlePriceValue = bundlePriceRaw ? Number(bundlePriceRaw) : NaN;
+  const bundlePrice = Number.isFinite(bundlePriceValue) ? Math.max(bundlePriceValue, 0) : null;
   const image = formData.get("image") as File | null;
 
-  if (!nameEn || !slug || !price) {
+  if (!nameEn || !slug || price <= 0) {
     return;
   }
 
@@ -120,11 +149,18 @@ export async function createProduct(formData: FormData) {
     description_en: descriptionEn,
     description_ar: descriptionAr,
     category_id: categoryId || null,
-    price: Number.isFinite(price) ? price : 0,
+    price,
     image_url: imageUrl,
     season: season || null,
     is_active: true,
     featured: false,
+    stock_qty: stockQty,
+    min_order_qty: minOrderQty,
+    max_order_qty:
+      maxOrderQty && maxOrderQty >= minOrderQty ? maxOrderQty : null,
+    order_multiple: orderMultiple,
+    bundle_qty: bundleQty,
+    bundle_price: bundlePrice,
   });
 
   revalidatePath(siteConfig.adminRoute);
@@ -143,6 +179,81 @@ export async function deleteProduct(formData: FormData) {
   await supabase.from("products").delete().eq("id", id);
   revalidatePath(siteConfig.adminRoute);
   revalidatePath("/");
+}
+
+export async function createCoupon(formData: FormData) {
+  requireAdmin(formData);
+  const supabase = getSupabaseAdmin();
+
+  const code = String(formData.get("code") ?? "").trim().toUpperCase();
+  const type = String(formData.get("type") ?? "percent").trim();
+  const valueRaw = String(formData.get("value") ?? "").trim();
+  const value = valueRaw ? Number(valueRaw) : NaN;
+  const minSubtotalRaw = String(formData.get("min_subtotal") ?? "").trim();
+  const min_subtotal = minSubtotalRaw ? Number(minSubtotalRaw) : null;
+  const maxUsesRaw = String(formData.get("max_uses") ?? "").trim();
+  const max_uses = maxUsesRaw ? Number(maxUsesRaw) : null;
+  const startsAtRaw = String(formData.get("starts_at") ?? "").trim();
+  const expiresAtRaw = String(formData.get("expires_at") ?? "").trim();
+  const starts_at = startsAtRaw ? new Date(startsAtRaw).toISOString() : null;
+  const expires_at = expiresAtRaw ? new Date(expiresAtRaw).toISOString() : null;
+
+  if (!code || !type || !Number.isFinite(value)) {
+    return;
+  }
+
+  await supabase.from("coupons").insert({
+    code,
+    type,
+    value,
+    min_subtotal: min_subtotal ?? null,
+    max_uses: max_uses ?? null,
+    used_count: 0,
+    starts_at: starts_at ?? null,
+    expires_at: expires_at ?? null,
+    is_active: true,
+  });
+
+  revalidatePath(siteConfig.adminRoute);
+}
+
+export async function deleteCoupon(formData: FormData) {
+  requireAdmin(formData);
+  const supabase = getSupabaseAdmin();
+  const id = String(formData.get("coupon_id") ?? "").trim();
+  if (!id) return;
+  await supabase.from("coupons").delete().eq("id", id);
+  revalidatePath(siteConfig.adminRoute);
+}
+
+export async function updateCoupon(formData: FormData) {
+  requireAdmin(formData);
+  const supabase = getSupabaseAdmin();
+  const id = String(formData.get("coupon_id") ?? "").trim();
+  if (!id) return;
+
+  const updates: Record<string, unknown> = {};
+  const code = String(formData.get("code") ?? "").trim().toUpperCase();
+  if (code) updates.code = code;
+  const type = String(formData.get("type") ?? "").trim();
+  if (type) updates.type = type;
+  const valueRaw = String(formData.get("value") ?? "").trim();
+  if (valueRaw) updates.value = Number(valueRaw);
+  const minSubtotalRaw = String(formData.get("min_subtotal") ?? "").trim();
+  if (minSubtotalRaw) updates.min_subtotal = Number(minSubtotalRaw);
+  const maxUsesRaw = String(formData.get("max_uses") ?? "").trim();
+  if (maxUsesRaw) updates.max_uses = Number(maxUsesRaw);
+  const startsAtRaw = String(formData.get("starts_at") ?? "").trim();
+  if (startsAtRaw) updates.starts_at = new Date(startsAtRaw).toISOString();
+  const expiresAtRaw = String(formData.get("expires_at") ?? "").trim();
+  if (expiresAtRaw) updates.expires_at = new Date(expiresAtRaw).toISOString();
+  const isActiveRaw = String(formData.get("is_active") ?? "").trim();
+  if (isActiveRaw) updates.is_active = isActiveRaw === "true";
+
+  if (!Object.keys(updates).length) return;
+
+  await supabase.from("coupons").update(updates).eq("id", id);
+  revalidatePath(siteConfig.adminRoute);
 }
 
 export async function toggleProductActive(formData: FormData) {

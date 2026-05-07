@@ -23,12 +23,17 @@ create table if not exists public.products (
   is_active boolean default true,
   featured boolean default false,
   season text,
+  stock_qty integer,
+  min_order_qty integer default 1,
+  max_order_qty integer,
+  order_multiple integer default 1,
   created_at timestamptz default now()
 );
 
 create table if not exists public.orders (
   id uuid primary key,
   customer_name text not null,
+  customer_email text,
   phone text not null,
   address text not null,
   city text not null,
@@ -46,6 +51,8 @@ create table if not exists public.orders (
   total numeric not null,
   items jsonb not null,
   status text,
+  coupon_code text,
+  coupon_discount numeric,
   shipping_provider text,
   shipping_tracking_number text,
   shipping_reference text,
@@ -58,14 +65,53 @@ alter table public.categories enable row level security;
 alter table public.products enable row level security;
 alter table public.orders enable row level security;
 
-create policy "Public categories read" on public.categories
-  for select using (true);
+create table if not exists public.coupons (
+  id uuid primary key default uuid_generate_v4(),
+  code text not null unique,
+  type text not null,
+  value numeric not null,
+  min_subtotal numeric,
+  max_uses integer,
+  used_count integer default 0,
+  starts_at timestamptz,
+  expires_at timestamptz,
+  is_active boolean default true,
+  created_at timestamptz default now()
+);
 
-create policy "Public products read" on public.products
-  for select using (is_active = true);
+alter table public.coupons enable row level security;
 
-create policy "Public orders insert" on public.orders
-  for insert with check (true);
+do $$
+begin
+  create policy "Public categories read" on public.categories
+    for select using (true);
+exception
+  when duplicate_object then null;
+end $$;
+
+do $$
+begin
+  create policy "Public products read" on public.products
+    for select using (is_active = true);
+exception
+  when duplicate_object then null;
+end $$;
+
+do $$
+begin
+  create policy "Public orders insert" on public.orders
+    for insert with check (true);
+exception
+  when duplicate_object then null;
+end $$;
+
+do $$
+begin
+  create policy "Public coupons read" on public.coupons
+    for select using (is_active = true);
+exception
+  when duplicate_object then null;
+end $$;
 
 insert into storage.buckets (id, name, public)
 values ('products', 'products', true)
@@ -75,17 +121,37 @@ insert into storage.buckets (id, name, public)
 values ('receipts', 'receipts', true)
 on conflict do nothing;
 
-create policy "Public products bucket read" on storage.objects
-  for select using (bucket_id = 'products');
+do $$
+begin
+  create policy "Public products bucket read" on storage.objects
+    for select using (bucket_id = 'products');
+exception
+  when duplicate_object then null;
+end $$;
 
-create policy "Public receipts bucket read" on storage.objects
-  for select using (bucket_id = 'receipts');
+do $$
+begin
+  create policy "Public receipts bucket read" on storage.objects
+    for select using (bucket_id = 'receipts');
+exception
+  when duplicate_object then null;
+end $$;
 
-create policy "Public products upload" on storage.objects
-  for insert with check (bucket_id = 'products');
+do $$
+begin
+  create policy "Public products upload" on storage.objects
+    for insert with check (bucket_id = 'products');
+exception
+  when duplicate_object then null;
+end $$;
 
-create policy "Public receipts upload" on storage.objects
-  for insert with check (bucket_id = 'receipts');
+do $$
+begin
+  create policy "Public receipts upload" on storage.objects
+    for insert with check (bucket_id = 'receipts');
+exception
+  when duplicate_object then null;
+end $$;
 
 alter table public.orders add column if not exists district text;
 alter table public.orders add column if not exists landmark text;
@@ -97,3 +163,11 @@ alter table public.orders add column if not exists shipping_tracking_number text
 alter table public.orders add column if not exists shipping_reference text;
 alter table public.orders add column if not exists shipping_state text;
 alter table public.orders add column if not exists shipping_error text;
+alter table public.orders add column if not exists coupon_code text;
+alter table public.orders add column if not exists coupon_discount numeric;
+alter table public.products add column if not exists stock_qty integer;
+alter table public.products add column if not exists min_order_qty integer default 1;
+alter table public.products add column if not exists max_order_qty integer;
+alter table public.products add column if not exists order_multiple integer default 1;
+alter table public.products add column if not exists bundle_qty integer;
+alter table public.products add column if not exists bundle_price numeric;

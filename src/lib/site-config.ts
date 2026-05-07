@@ -1,13 +1,17 @@
 import type { Season } from "./types";
 
 export const siteConfig = {
-  brand: "Jox Fashion",
+  brand: "Joox Fashion",
   currency: "EGP",
   walletDiscount: 0.1,
   adminRoute: "/atelier",
   whatsapp: {
     wholesale: process.env.NEXT_PUBLIC_WHOLESALE_WHATSAPP ?? "01276157855",
     orders: process.env.NEXT_PUBLIC_ORDER_WHATSAPP ?? "01204086192",
+  },
+  wallets: {
+    orange: process.env.NEXT_PUBLIC_WALLET_ORANGE ?? "",
+    vodafone: process.env.NEXT_PUBLIC_WALLET_VODAFONE ?? "",
   },
 };
 

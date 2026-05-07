@@ -11,7 +11,7 @@ export default function FloatingWhatsapp() {
     siteConfig.whatsapp.wholesale,
     locale === "ar"
       ? "طلب جملة من جوكس فاشون"
-      : "Wholesale inquiry for Jox Fashion",
+      : "Wholesale inquiry for Joox Fashion",
   );
 
   return (
