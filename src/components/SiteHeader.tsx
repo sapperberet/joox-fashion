@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { copy } from "@/lib/i18n";
 import { calculateCartTotals, calculateLineTotal } from "@/lib/cart";
@@ -12,6 +13,7 @@ import { useCart } from "./CartProvider";
 
 export default function SiteHeader() {
   const { locale } = useLanguage();
+  const pathname = usePathname();
   const t = copy[locale];
   const { items } = useCart();
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
@@ -27,6 +29,9 @@ export default function SiteHeader() {
     { href: "/#policy", label: t.nav.policy },
   ];
 
+  const isHomeActive = pathname === "/";
+  const isProductsActive = pathname === "/products";
+
   return (
     <header className="temple-header sticky top-0 z-40 border-b border-gold/10">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:gap-6 sm:px-6 sm:py-4">
@@ -36,16 +41,36 @@ export default function SiteHeader() {
         
         {/* Desktop Navigation */}
         <nav className="hidden items-center gap-6 text-sm font-semibold uppercase tracking-[0.2em] text-sand md:gap-8 lg:flex">
-          {navLinks.map((link) => (
-            <a 
-              key={link.href}
-              href={link.href} 
-              className="hover:text-gold transition"
-              onClick={() => setMobileMenuOpen(false)}
+          <div className="group relative">
+            <Link
+              href="/"
+              className={`inline-flex items-center rounded-full px-3 py-1.5 transition ${isHomeActive ? "bg-gold/15 text-gold shadow-[0_0_0_1px_rgba(215,180,106,0.25)]" : "text-sand hover:bg-gold/10 hover:text-gold"}`}
             >
-              {link.label}
-            </a>
-          ))}
+              Home
+            </Link>
+            <div className="pointer-events-none absolute left-0 top-full z-50 w-56 rounded-3xl border border-gold/20 bg-obsidian/95 p-2 opacity-0 shadow-2xl backdrop-blur transition group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100">
+              <div className="px-3 py-2 text-[0.65rem] uppercase tracking-[0.28em] text-gold/60">Home sections</div>
+              <div className="flex flex-col gap-1">
+                {navLinks.map((link) => (
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    className="rounded-xl px-3 py-2 text-xs uppercase tracking-[0.18em] text-sand transition hover:bg-gold/10 hover:text-gold"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    {link.label}
+                  </a>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <Link
+            href="/products"
+            className={`inline-flex items-center rounded-full px-3 py-1.5 transition ${isProductsActive ? "bg-gold/15 text-gold shadow-[0_0_0_1px_rgba(215,180,106,0.25)]" : "text-sand hover:bg-gold/10 hover:text-gold"}`}
+          >
+            Products
+          </Link>
         </nav>
 
         <div className="flex items-center gap-2 sm:gap-3">
@@ -53,7 +78,7 @@ export default function SiteHeader() {
           <Link
             href="/cart"
             title={t.nav.cart}
-            className="relative md:hidden rounded-full border border-gold/40 px-3 py-2.5 text-lg transition hover:bg-gold/10 inline-flex items-center justify-center hover:border-gold/60"
+            className="relative md:hidden inline-flex items-center justify-center rounded-full px-3 py-2.5 text-lg transition hover:bg-gold/10"
           >
             🛒
             {itemCount > 0 && (
@@ -63,18 +88,11 @@ export default function SiteHeader() {
             )}
           </Link>
 
-          {/* Desktop Buttons */}
-          <Link
-            href="/products"
-            className="hidden rounded-full border border-gold/40 px-5 py-2.5 text-sm font-semibold uppercase tracking-[0.2em] text-gold transition hover:bg-gold/10 hover:border-gold/60 md:inline-flex items-center justify-center"
-          >
-            {t.nav.products}
-          </Link>
           <div className="group relative hidden md:block">
             <Link
               href="/cart"
               title={t.nav.cart}
-              className="relative inline-flex items-center justify-center rounded-full border border-gold/40 px-4 py-2.5 text-lg transition hover:bg-gold/10 hover:border-gold/60"
+              className="relative inline-flex items-center justify-center rounded-full px-4 py-2.5 text-lg transition hover:bg-gold/10"
             >
               🛒
               {itemCount > 0 && (
@@ -127,7 +145,7 @@ export default function SiteHeader() {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden rounded-full border border-gold/40 px-3 py-2 text-gold transition hover:bg-gold/10"
+            className="md:hidden rounded-full px-3 py-2 text-gold transition hover:bg-gold/10"
             aria-label="Toggle menu"
           >
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -145,6 +163,14 @@ export default function SiteHeader() {
       {mobileMenuOpen && (
         <div className="border-t border-gold/10 bg-obsidian/95 backdrop-blur md:hidden">
           <nav className="flex flex-col gap-1 px-4 py-4 sm:px-6">
+            <Link
+              href="/"
+              className={`rounded-lg px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] transition border border-transparent hover:bg-gold/10 hover:border-gold/40 ${isHomeActive ? "text-gold bg-gold/15 shadow-[0_0_0_1px_rgba(215,180,106,0.25)]" : "text-sand hover:text-gold"}`}
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Home
+            </Link>
+            <div className="px-4 pt-2 text-[0.65rem] uppercase tracking-[0.28em] text-gold/55">Home sections</div>
             {navLinks.map((link) => (
               <a
                 key={link.href}
@@ -157,7 +183,7 @@ export default function SiteHeader() {
             ))}
             <Link
               href="/products"
-              className="rounded-lg px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-sand transition hover:bg-gold/10 hover:text-gold border border-transparent hover:border-gold/40"
+              className={`rounded-lg px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] transition border border-transparent hover:bg-gold/10 hover:border-gold/40 ${isProductsActive ? "text-gold bg-gold/15 shadow-[0_0_0_1px_rgba(215,180,106,0.25)]" : "text-sand hover:text-gold"}`}
               onClick={() => setMobileMenuOpen(false)}
             >
               {t.nav.products}

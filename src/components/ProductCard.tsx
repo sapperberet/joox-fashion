@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { copy } from "@/lib/i18n";
 import type { Product } from "@/lib/types";
 import { formatCurrency } from "@/lib/format";
@@ -26,10 +27,9 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   return (
     <div className="group flex flex-col overflow-hidden rounded-3xl border-2 border-gold/20 bg-stone/80 p-4 shadow-lg hover:shadow-2xl hover:border-gold/40 transition">
-      <button
-        onClick={() => setShowImageModal(true)}
+      <Link
+        href={`/product/${product.slug}`}
         className="relative aspect-4/5 overflow-hidden rounded-2xl bg-ink/40 cursor-pointer hover:opacity-95 transition group-hover:border-2 group-hover:border-gold/20 border-2 border-transparent"
-        type="button"
         aria-label={locale === "ar" ? product.name_ar : product.name_en}
       >
         {product.image_url ? (
@@ -38,7 +38,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             alt={locale === "ar" ? product.name_ar : product.name_en}
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-            className="object-cover transition duration-700 group-hover:scale-110"
+            className="object-contain p-2 transition duration-700 group-hover:scale-[1.02]"
             priority={false}
           />
         ) : (
@@ -56,14 +56,14 @@ export default function ProductCard({ product }: ProductCardProps) {
             𓆣 Sale
           </span>
         )}
-      </button>
+      </Link>
       <div className="mt-3 flex flex-1 flex-col gap-2.5 sm:mt-4 sm:gap-3">
-        <div className="flex items-start justify-between gap-2">
-          <div className="text-lg sm:text-xl font-semibold text-sand line-clamp-2 flex-1">
+        <Link href={`/product/${product.slug}`} className="flex items-start justify-between gap-2 text-left">
+          <div className="text-lg sm:text-xl font-semibold text-sand line-clamp-2 flex-1 hover:text-gold transition">
             {locale === "ar" ? product.name_ar : product.name_en}
           </div>
           <span className="text-xl sm:text-2xl mt-0.5">𓋹</span>
-        </div>
+        </Link>
         <div className="text-xs sm:text-sm text-sand/70 line-clamp-2">
           {locale === "ar" ? product.description_ar : product.description_en}
         </div>
@@ -94,37 +94,6 @@ export default function ProductCard({ product }: ProductCardProps) {
           </button>
         </div>
       </div>
-
-      {/* Image Modal */}
-      {showImageModal && product.image_url && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur p-4"
-          onClick={() => setShowImageModal(false)}
-        >
-          <button
-            className="absolute top-4 right-4 text-gold hover:text-gold/80 transition z-10"
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowImageModal(false);
-            }}
-            aria-label="Close"
-          >
-            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-          <div className="relative w-full max-w-2xl aspect-4/5" onClick={(e) => e.stopPropagation()}>
-            <Image
-              src={product.image_url}
-              alt={locale === "ar" ? product.name_ar : product.name_en}
-              fill
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 800px"
-              className="object-contain rounded-2xl"
-              priority
-            />
-          </div>
-        </div>
-      )}
     </div>
   );
 }
