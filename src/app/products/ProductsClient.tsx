@@ -62,13 +62,13 @@ export default function ProductsClient({
       <SiteHeader />
       <main className="mx-auto flex max-w-6xl flex-col gap-8 sm:gap-12 px-4 sm:px-6 py-8 sm:py-16">
         <div className="flex flex-col gap-2 sm:gap-3">
-          <p className="text-xs uppercase tracking-[0.4em] text-gold/80">
+          <p className="text-xs sm:text-sm uppercase tracking-[0.4em] text-gold/80">
             {t.nav.products}
           </p>
-          <h1 className="font-display text-2xl sm:text-4xl tracking-[0.2em] text-gold">
+          <h1 className="font-display text-3xl sm:text-4xl md:text-5xl tracking-[0.2em] text-gold">
             {t.nav.products}
           </h1>
-          <p className="text-xs sm:text-sm text-sand/70">{t.hero.description}</p>
+          <p className="text-base sm:text-lg text-sand/70">{t.hero.description}</p>
         </div>
         <div className="grid gap-3 sm:gap-4 rounded-3xl border border-gold/15 bg-stone/80 p-3 sm:p-5 temple-panel md:grid-cols-[1.2fr_1fr_1fr]">
           <div className="md:col-span-3">
@@ -77,7 +77,7 @@ export default function ProductsClient({
             </div>
           </div>
           <div>
-            <div className="text-xs uppercase tracking-[0.2em] text-sand/60 mb-2 sm:mb-3">
+            <div className="text-xs sm:text-sm uppercase tracking-[0.2em] text-sand/60 mb-2 sm:mb-3 font-semibold">
               {t.products.season}
             </div>
             <div className="flex flex-wrap gap-1.5 sm:gap-2">
@@ -90,7 +90,7 @@ export default function ProductsClient({
                   key={option.value}
                   type="button"
                   onClick={() => setSeasonFilter(option.value as SeasonFilter)}
-                  className={`rounded-full border px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs uppercase tracking-[0.2em] transition ${
+                  className={`rounded-full border px-3 py-2 sm:px-4 sm:py-2.5 text-xs sm:text-sm uppercase tracking-[0.2em] transition ${
                     seasonFilter === option.value
                       ? "border-gold bg-gold text-ink"
                       : "border-gold/30 text-sand hover:border-gold/60 hover:bg-gold/5"
@@ -102,13 +102,13 @@ export default function ProductsClient({
             </div>
           </div>
           <div>
-            <div className="text-xs uppercase tracking-[0.2em] text-sand/60 mb-2 sm:mb-3">
+            <div className="text-xs sm:text-sm uppercase tracking-[0.2em] text-sand/60 mb-2 sm:mb-3 font-semibold">
               {t.products.category}
             </div>
             <select
               value={categoryFilter}
               onChange={(event) => setCategoryFilter(event.target.value)}
-              className="w-full rounded-2xl border border-gold/20 bg-obsidian px-3 sm:px-4 py-2.5 sm:py-3 text-xs uppercase tracking-[0.2em] text-sand focus:outline-none focus:border-gold/60 focus:ring-1 focus:ring-gold/30 transition"
+              className="w-full rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-base uppercase tracking-[0.2em] text-sand focus:outline-none focus:border-gold/60 focus:ring-1 focus:ring-gold/30 transition"
             >
               <option value="all">{t.products.all}</option>
               {categories.map((category) => (
@@ -119,13 +119,13 @@ export default function ProductsClient({
             </select>
           </div>
           <div>
-            <div className="text-xs uppercase tracking-[0.2em] text-sand/60 mb-2 sm:mb-3">
+            <div className="text-xs sm:text-sm uppercase tracking-[0.2em] text-sand/60 mb-2 sm:mb-3 font-semibold">
               {t.products.sort}
             </div>
             <select
               value={sortBy}
               onChange={(event) => setSortBy(event.target.value as SortOption)}
-              className="w-full rounded-2xl border border-gold/20 bg-obsidian px-3 sm:px-4 py-2.5 sm:py-3 text-xs uppercase tracking-[0.2em] text-sand focus:outline-none focus:border-gold/60 focus:ring-1 focus:ring-gold/30 transition"
+              className="w-full rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-base uppercase tracking-[0.2em] text-sand focus:outline-none focus:border-gold/60 focus:ring-1 focus:ring-gold/30 transition"
             >
               <option value="newest">{t.products.newest}</option>
               <option value="priceLow">{t.products.priceLow}</option>

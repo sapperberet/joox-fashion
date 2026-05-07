@@ -69,23 +69,23 @@ export default function HomePageClient({
               <p className="text-xs uppercase tracking-[0.5em] text-gold/80">
                 {t.hero.eyebrow}
               </p>
-              <h1 className="text-balance font-display text-2xl sm:text-4xl md:text-5xl tracking-[0.2em] text-gold leading-tight">
+              <h1 className="text-balance font-display text-3xl sm:text-5xl md:text-6xl tracking-[0.2em] text-gold leading-tight">
                 {t.hero.title}
               </h1>
-              <p className="text-base sm:text-lg md:text-xl text-sand/90">{t.hero.subtitle}</p>
-              <p className="text-sm sm:text-base text-sand/70 max-w-xl leading-relaxed">
+              <p className="text-lg sm:text-xl md:text-2xl text-sand/90">{t.hero.subtitle}</p>
+              <p className="text-base sm:text-lg text-sand/70 max-w-xl leading-relaxed">
                 {t.hero.description}
               </p>
               <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 pt-2">
                 <a
                   href="#collections"
-                  className="rounded-full bg-gold px-4 py-2.5 sm:px-6 sm:py-3 text-xs font-semibold uppercase tracking-[0.2em] text-ink transition hover:bg-gold/90 text-center sm:text-left"
+                  className="rounded-full bg-gold px-5 py-3 sm:px-6 sm:py-4 text-sm sm:text-base font-semibold uppercase tracking-[0.2em] text-ink transition hover:bg-gold/90 text-center sm:text-left inline-flex items-center justify-center"
                 >
                   {t.hero.primaryCta}
                 </a>
                 <Link
                   href="/products"
-                  className="rounded-full border border-gold/40 px-4 py-2.5 sm:px-6 sm:py-3 text-xs font-semibold uppercase tracking-[0.2em] text-gold transition hover:bg-gold/10 text-center sm:text-left"
+                  className="rounded-full border border-gold/40 px-5 py-3 sm:px-6 sm:py-4 text-sm sm:text-base font-semibold uppercase tracking-[0.2em] text-gold transition hover:bg-gold/10 text-center sm:text-left inline-flex items-center justify-center"
                 >
                   {t.hero.secondaryCta}
                 </Link>
@@ -123,10 +123,10 @@ export default function HomePageClient({
         <section id="collections" className="px-4 sm:px-6">
           <div className="mx-auto flex max-w-6xl flex-col gap-6 sm:gap-8">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
-              <h2 className="font-display text-2xl sm:text-3xl tracking-[0.2em] text-gold">
+              <h2 className="font-display text-2xl sm:text-3xl md:text-4xl tracking-[0.2em] text-gold">
                 {t.nav.collections}
               </h2>
-              <p className="text-xs uppercase tracking-[0.3em] text-sand/60">
+              <p className="text-xs sm:text-sm uppercase tracking-[0.3em] text-sand/60">
                 {t.hero.eyebrow}
               </p>
             </div>
@@ -136,10 +136,10 @@ export default function HomePageClient({
                 className="rounded-3xl border border-gold/20 bg-stone/80 p-4 sm:p-6 temple-panel"
               >
                 <div className="flex items-center justify-between gap-2">
-                  <h3 className="font-display text-xl sm:text-2xl tracking-[0.2em] text-gold">
+                  <h3 className="font-display text-lg sm:text-2xl md:text-3xl tracking-[0.2em] text-gold">
                     {t.sections.summer}
                   </h3>
-                  <span className="text-xs uppercase tracking-[0.3em] text-sand/60 shrink-0">
+                  <span className="text-xs sm:text-sm uppercase tracking-[0.3em] text-sand/60 shrink-0">
                     01
                   </span>
                 </div>
@@ -147,7 +147,7 @@ export default function HomePageClient({
                   {summerCategories.map((category) => (
                     <span
                       key={category.slug}
-                      className="rounded-full border border-gold/30 px-3 py-1.5 sm:px-4 sm:py-2 text-xs uppercase tracking-[0.2em] text-sand hover:border-gold/60 hover:bg-gold/10 transition cursor-default"
+                      className="rounded-full border border-gold/30 px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm uppercase tracking-[0.2em] text-sand hover:border-gold/60 hover:bg-gold/10 transition cursor-default"
                     >
                       {locale === "ar" ? category.name_ar : category.name_en}
                     </span>
@@ -159,10 +159,10 @@ export default function HomePageClient({
                 className="rounded-3xl border border-gold/20 bg-stone/80 p-4 sm:p-6 temple-panel"
               >
                 <div className="flex items-center justify-between gap-2">
-                  <h3 className="font-display text-xl sm:text-2xl tracking-[0.2em] text-gold">
+                  <h3 className="font-display text-lg sm:text-2xl md:text-3xl tracking-[0.2em] text-gold">
                     {t.sections.winter}
                   </h3>
-                  <span className="text-xs uppercase tracking-[0.3em] text-sand/60 shrink-0">
+                  <span className="text-xs sm:text-sm uppercase tracking-[0.3em] text-sand/60 shrink-0">
                     02
                   </span>
                 </div>
@@ -170,7 +170,7 @@ export default function HomePageClient({
                   {winterCategories.map((category) => (
                     <span
                       key={category.slug}
-                      className="rounded-full border border-gold/30 px-3 py-1.5 sm:px-4 sm:py-2 text-xs uppercase tracking-[0.2em] text-sand hover:border-gold/60 hover:bg-gold/10 transition cursor-default"
+                      className="rounded-full border border-gold/30 px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm uppercase tracking-[0.2em] text-sand hover:border-gold/60 hover:bg-gold/10 transition cursor-default"
                     >
                       {locale === "ar" ? category.name_ar : category.name_en}
                     </span>
@@ -184,7 +184,7 @@ export default function HomePageClient({
         <section className="px-4 sm:px-6">
           <div className="mx-auto flex max-w-6xl flex-col gap-6 sm:gap-8">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
-              <h2 className="font-display text-2xl sm:text-3xl tracking-[0.2em] text-gold">
+              <h2 className="font-display text-2xl sm:text-3xl md:text-4xl tracking-[0.2em] text-gold">
                 {t.sections.featured}
               </h2>
               <Link

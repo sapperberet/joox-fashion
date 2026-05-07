@@ -31,7 +31,7 @@ export default function SiteHeader() {
         </Link>
         
         {/* Desktop Navigation */}
-        <nav className="hidden items-center gap-6 text-xs font-semibold uppercase tracking-[0.2em] text-sand md:gap-8 lg:flex">
+        <nav className="hidden items-center gap-6 text-sm font-semibold uppercase tracking-[0.2em] text-sand md:gap-8 lg:flex">
           {navLinks.map((link) => (
             <a 
               key={link.href}
@@ -48,11 +48,11 @@ export default function SiteHeader() {
           {/* Mobile Cart Icon */}
           <Link
             href="/cart"
-            className="relative md:hidden rounded-full border border-gold/40 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-gold transition hover:bg-gold/10"
+            className="relative md:hidden rounded-full border border-gold/40 px-4 py-2.5 text-sm font-semibold uppercase tracking-[0.2em] text-gold transition hover:bg-gold/10 inline-flex items-center justify-center"
           >
             {t.nav.cart}
             {itemCount > 0 && (
-              <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-gold text-[0.65rem] font-semibold text-ink">
+              <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-gold text-xs font-semibold text-ink">
                 {itemCount}
               </span>
             )}
@@ -61,24 +61,24 @@ export default function SiteHeader() {
           {/* Desktop Buttons */}
           <Link
             href="/products"
-            className="hidden rounded-full border border-gold/40 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-gold transition hover:bg-gold/10 md:inline-flex"
+            className="hidden rounded-full border border-gold/40 px-5 py-2.5 text-sm font-semibold uppercase tracking-[0.2em] text-gold transition hover:bg-gold/10 md:inline-flex items-center justify-center"
           >
             {t.nav.products}
           </Link>
           <Link
             href="/cart"
-            className="relative hidden rounded-full border border-gold/40 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-gold transition hover:bg-gold/10 md:inline-flex"
+            className="relative hidden rounded-full border border-gold/40 px-5 py-2.5 text-sm font-semibold uppercase tracking-[0.2em] text-gold transition hover:bg-gold/10 md:inline-flex items-center justify-center"
           >
             {t.nav.cart}
             {itemCount > 0 && (
-              <span className="ml-2 rounded-full bg-gold px-2 py-0.5 text-[0.6rem] font-semibold text-ink">
+              <span className="ml-2 rounded-full bg-gold px-2.5 py-0.5 text-xs font-semibold text-ink">
                 {itemCount}
               </span>
             )}
           </Link>
           <Link
             href="/checkout"
-            className="rounded-full bg-gold px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-ink transition hover:bg-gold/90 sm:px-4 sm:py-2"
+            className="rounded-full bg-gold px-4 py-2.5 sm:px-5 sm:py-3 text-sm font-semibold uppercase tracking-[0.2em] text-ink transition hover:bg-gold/90 inline-flex items-center justify-center"
           >
             {t.nav.checkout}
           </Link>

@@ -52,17 +52,17 @@ export default function ProductCard({ product }: ProductCardProps) {
         )}
       </div>
       <div className="mt-3 flex flex-1 flex-col gap-1 sm:mt-4 sm:gap-2">
-        <div className="text-base sm:text-lg font-semibold text-sand line-clamp-2">
+        <div className="text-lg sm:text-xl font-semibold text-sand line-clamp-2">
           {locale === "ar" ? product.name_ar : product.name_en}
         </div>
-        <div className="text-xs sm:text-sm text-sand/70 line-clamp-2">
+        <div className="text-sm sm:text-base text-sand/70 line-clamp-2">
           {locale === "ar" ? product.description_ar : product.description_en}
         </div>
         <div className="mt-auto flex items-center justify-between gap-2">
-          <div className="text-sm sm:text-base font-semibold text-gold">
+          <div className="text-base sm:text-lg font-semibold text-gold">
             {product.is_on_sale ? (
               <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-2">
-                <span className="text-xs sm:text-sm text-sand/60 line-through">
+                <span className="text-sm sm:text-base text-sand/60 line-through">
                   {formatCurrency(product.price, locale)}
                 </span>
                 <span>
@@ -76,17 +76,17 @@ export default function ProductCard({ product }: ProductCardProps) {
               formatCurrency(product.price, locale)
             )}
           </div>
-          <div className="flex items-center gap-1 sm:gap-2 text-xs uppercase tracking-[0.2em] text-sand">
+          <div className="flex items-center gap-1.5 sm:gap-2 text-sm uppercase tracking-[0.2em] text-sand">
             <Link
               href={`/product/${product.slug}`}
-              className="rounded-full border border-gold/30 px-2 py-1.5 sm:px-3 sm:py-2 transition hover:bg-gold/10 hover:text-gold text-[0.65rem] sm:text-xs"
+              className="rounded-full border border-gold/30 px-3 py-2 sm:px-3.5 sm:py-2.5 transition hover:bg-gold/10 hover:text-gold text-xs sm:text-sm font-semibold inline-flex items-center justify-center"
             >
               {t.products.details}
             </Link>
             <button
               type="button"
               onClick={() => addItem(product, 1)}
-              className="rounded-full bg-gold px-2 py-1.5 sm:px-3 sm:py-2 text-ink text-[0.65rem] sm:text-xs font-semibold transition hover:bg-gold/90"
+              className="rounded-full bg-gold px-3 py-2 sm:px-3.5 sm:py-2.5 text-ink text-xs sm:text-sm font-semibold transition hover:bg-gold/90 inline-flex items-center justify-center"
             >
               {t.products.order}
             </button>

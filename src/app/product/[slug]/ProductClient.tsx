@@ -55,17 +55,17 @@ export default function ProductClient({
           </div>
           <div className="flex flex-col gap-4 sm:gap-6">
             <div>
-              <p className="text-xs uppercase tracking-[0.4em] text-gold/80">
+              <p className="text-xs sm:text-sm uppercase tracking-[0.4em] text-gold/80">
                 {t.nav.products}
               </p>
-              <h1 className="font-display text-2xl sm:text-3xl md:text-4xl tracking-[0.2em] text-gold leading-tight mt-2">
+              <h1 className="font-display text-3xl sm:text-4xl md:text-5xl tracking-[0.2em] text-gold leading-tight mt-2">
                 {locale === "ar" ? product.name_ar : product.name_en}
               </h1>
             </div>
-            <p className="text-sm sm:text-base text-sand/70 leading-relaxed">
+            <p className="text-base sm:text-lg md:text-xl text-sand/70 leading-relaxed">
               {locale === "ar" ? product.description_ar : product.description_en}
             </p>
-            <div className="text-xl sm:text-2xl font-semibold text-gold">
+            <div className="text-2xl sm:text-3xl md:text-4xl font-semibold text-gold">
               {product.is_on_sale ? (
                 <div className="flex flex-col sm:flex-row sm:items-baseline gap-2 sm:gap-3">
                   <span className="text-sm sm:text-base text-sand/60 line-through">
@@ -92,7 +92,7 @@ export default function ProductClient({
             <div className="flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3 pt-2 sm:pt-4">
               <Link
                 href={`/checkout?product=${product.slug}`}
-                className="rounded-full bg-gold px-4 py-2.5 sm:px-6 sm:py-3 text-xs font-semibold uppercase tracking-[0.2em] text-ink transition hover:bg-gold/90 text-center sm:text-left"
+                className="rounded-full bg-gold px-5 py-3 sm:px-6 sm:py-4 text-sm sm:text-base font-semibold uppercase tracking-[0.2em] text-ink transition hover:bg-gold/90 text-center sm:text-left inline-flex items-center justify-center"
               >
                 {t.products.order}
               </Link>
