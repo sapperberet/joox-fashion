@@ -89,10 +89,26 @@ export type CartItem = {
 };
 
 export type CartCoupon = {
+  id?: string;
   code: string;
   type: "percent" | "fixed";
   value: number;
   min_subtotal?: number | null;
+  min_score?: number | null;
+  min_spend?: number | null;
+  requires_claim?: boolean;
+};
+
+export type Deal = {
+  id: string;
+  name_en: string;
+  name_ar: string;
+  deal_type: "buy_x_get_y" | "buy_x_of_product_get_y_free";
+  trigger_product_ids: string[] | null;
+  applicable_product_ids: string[];
+  buy_quantity: number;
+  free_quantity: number;
+  is_active: boolean;
 };
 
 export type Order = {
@@ -106,7 +122,7 @@ export type Order = {
   building_number?: string | null;
   floor?: string | null;
   apartment?: string | null;
-  payment_method: "cod" | "wallet";
+  payment_method: "cod" | "wallet" | "instapay";
   payment_status: string | null;
   receipt_url: string | null;
   subtotal: number;

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { copy } from "@/lib/i18n";
 import { calculateCartTotals, calculateLineTotal } from "@/lib/cart";
 import { formatCurrency } from "@/lib/format";
@@ -14,6 +14,7 @@ import { useCart } from "./CartProvider";
 export default function SiteHeader() {
   const { locale } = useLanguage();
   const pathname = usePathname();
+  const [activeCategory, setActiveCategory] = useState("");
   const t = copy[locale];
   const { items } = useCart();
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
@@ -21,13 +22,13 @@ export default function SiteHeader() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const previewItems = items.slice(0, 3);
 
-  const navLinks = [
-    { href: "/#collections", label: t.nav.collections },
-    { href: "/#summer", label: t.nav.summer },
-    { href: "/#winter", label: t.nav.winter },
-    { href: "/#payment", label: t.nav.payment },
-    { href: "/#policy", label: t.nav.policy },
-  ];
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    const params = new URLSearchParams(window.location.search);
+    setActiveCategory((params.get("category") ?? "").toLowerCase());
+  }, [pathname]);
 
   const isHomeActive = pathname === "/";
   const isProductsActive =
@@ -36,6 +37,8 @@ export default function SiteHeader() {
     pathname.startsWith("/cart") ||
     pathname.startsWith("/checkout") ||
     pathname.startsWith("/thank-you");
+  const isTopsActive = pathname.startsWith("/products") && activeCategory === "tops";
+  const isPantsActive = pathname.startsWith("/products") && activeCategory === "pants";
 
   return (
     <header className="temple-header sticky top-0 z-40 border-b border-gold/10">
@@ -45,53 +48,30 @@ export default function SiteHeader() {
         </Link>
 
         <nav className="hidden items-center gap-6 text-sm font-semibold uppercase tracking-[0.2em] text-sand md:gap-8 lg:flex">
-          <div className="group relative">
-            <Link
-              href="/"
-              className={`inline-flex items-center rounded-full px-3 py-1.5 transition ${isHomeActive ? "bg-gold/15 text-gold shadow-[0_0_0_1px_rgba(215,180,106,0.25)]" : "text-sand hover:bg-gold/10 hover:text-gold"}`}
-            >
-              Home
-            </Link>
-            <div className="pointer-events-none absolute left-0 top-full z-50 w-56 rounded-3xl border border-gold/20 bg-obsidian/95 p-2 opacity-0 shadow-2xl backdrop-blur transition group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100">
-              <div className="px-3 py-2 text-[0.65rem] uppercase tracking-[0.28em] text-gold/60">Home sections</div>
-              <div className="flex flex-col gap-1">
-                {navLinks.map((link) => (
-                  <a
-                    key={link.href}
-                    href={link.href}
-                    className="rounded-xl px-3 py-2 text-xs uppercase tracking-[0.18em] text-sand transition hover:bg-gold/10 hover:text-gold"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    {link.label}
-                  </a>
-                ))}
-              </div>
-            </div>
-          </div>
+          <Link
+            href="/"
+            className={`inline-flex items-center rounded-full px-3 py-1.5 transition ${isHomeActive ? "bg-gold/15 text-gold shadow-[0_0_0_1px_rgba(215,180,106,0.25)]" : "text-sand hover:bg-gold/10 hover:text-gold"}`}
+          >
+            Home
+          </Link>
 
           <Link
             href="/products"
-            className={`inline-flex items-center rounded-full px-3 py-1.5 transition ${isProductsActive ? "bg-gold/15 text-gold shadow-[0_0_0_1px_rgba(215,180,106,0.25)]" : "text-sand hover:bg-gold/10 hover:text-gold"}`}
+            className={`inline-flex items-center rounded-full px-3 py-1.5 transition ${isProductsActive && !isTopsActive && !isPantsActive ? "bg-gold/15 text-gold shadow-[0_0_0_1px_rgba(215,180,106,0.25)]" : "text-sand hover:bg-gold/10 hover:text-gold"}`}
           >
             Products
           </Link>
           <Link
-            href="/track"
-            className={`inline-flex items-center rounded-full px-3 py-1.5 transition ${pathname === '/track' ? "bg-gold/15 text-gold shadow-[0_0_0_1px_rgba(215,180,106,0.25)]" : "text-sand hover:bg-gold/10 hover:text-gold"}`}
+            href="/products?category=tops"
+            className={`inline-flex items-center rounded-full px-3 py-1.5 transition ${isTopsActive ? "bg-gold/15 text-gold shadow-[0_0_0_1px_rgba(215,180,106,0.25)]" : "text-sand hover:bg-gold/10 hover:text-gold"}`}
           >
-            {t.nav.track}
+            Tops
           </Link>
           <Link
-            href="/account"
-            className="inline-flex items-center rounded-full px-3 py-1.5 transition text-sand hover:bg-gold/10 hover:text-gold"
+            href="/products?category=pants"
+            className={`inline-flex items-center rounded-full px-3 py-1.5 transition ${isPantsActive ? "bg-gold/15 text-gold shadow-[0_0_0_1px_rgba(215,180,106,0.25)]" : "text-sand hover:bg-gold/10 hover:text-gold"}`}
           >
-            Account
-          </Link>
-          <Link
-            href="/admin"
-            className="inline-flex items-center rounded-full px-3 py-1.5 transition text-sand hover:bg-gold/10 hover:text-gold"
-          >
-            Admin
+            Pants
           </Link>
         </nav>
 
@@ -162,12 +142,14 @@ export default function SiteHeader() {
               )}
             </div>
           </div>
-          <div className="hidden md:block">
-            <LanguageToggle />
+          <div className="hidden md:flex items-center gap-2 rounded-full border border-gold/20 bg-obsidian/70 px-2 py-1">
+            <span className="text-[0.58rem] font-semibold uppercase tracking-[0.2em] text-sand/70">Language</span>
+            <LanguageToggle compact />
           </div>
 
-          <div className="md:hidden">
-            <LanguageToggle />
+          <div className="md:hidden flex items-center gap-2 rounded-full border border-gold/20 bg-obsidian/70 px-2 py-1">
+            <span className="text-[0.58rem] font-semibold uppercase tracking-[0.2em] text-sand/70">Lang</span>
+            <LanguageToggle compact />
           </div>
 
           <button
@@ -196,44 +178,26 @@ export default function SiteHeader() {
             >
               Home
             </Link>
-            <div className="px-4 pt-2 text-[0.65rem] uppercase tracking-[0.28em] text-gold/55">Home sections</div>
-            {navLinks.map((link) => (
-              <a
-                key={link.href}
-                href={link.href}
-                className="rounded-lg px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-sand transition hover:bg-gold/10 hover:text-gold border border-transparent hover:border-gold/40"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                {link.label}
-              </a>
-            ))}
             <Link
               href="/products"
-              className={`rounded-lg px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] transition border border-transparent hover:bg-gold/10 hover:border-gold/40 ${isProductsActive ? "text-gold bg-gold/15 shadow-[0_0_0_1px_rgba(215,180,106,0.25)]" : "text-sand hover:text-gold"}`}
+              className={`rounded-lg px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] transition border border-transparent hover:bg-gold/10 hover:border-gold/40 ${isProductsActive && !isTopsActive && !isPantsActive ? "text-gold bg-gold/15 shadow-[0_0_0_1px_rgba(215,180,106,0.25)]" : "text-sand hover:text-gold"}`}
               onClick={() => setMobileMenuOpen(false)}
             >
               {t.nav.products}
             </Link>
             <Link
-              href="/track"
-              className={`rounded-lg px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] transition border border-transparent hover:bg-gold/10 hover:border-gold/40 ${pathname === '/track' ? "text-gold bg-gold/15 shadow-[0_0_0_1px_rgba(215,180,106,0.25)]" : "text-sand hover:text-gold"}`}
+              href="/products?category=tops"
+              className={`rounded-lg px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] transition border border-transparent hover:bg-gold/10 hover:border-gold/40 ${isTopsActive ? "text-gold bg-gold/15 shadow-[0_0_0_1px_rgba(215,180,106,0.25)]" : "text-sand hover:text-gold"}`}
               onClick={() => setMobileMenuOpen(false)}
             >
-              {t.nav.track}
+              Tops
             </Link>
             <Link
-              href="/account"
-              className="rounded-lg px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] transition border border-transparent hover:bg-gold/10 hover:border-gold/40 text-sand hover:text-gold"
+              href="/products?category=pants"
+              className={`rounded-lg px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] transition border border-transparent hover:bg-gold/10 hover:border-gold/40 ${isPantsActive ? "text-gold bg-gold/15 shadow-[0_0_0_1px_rgba(215,180,106,0.25)]" : "text-sand hover:text-gold"}`}
               onClick={() => setMobileMenuOpen(false)}
             >
-              Account
-            </Link>
-            <Link
-              href="/admin"
-              className="rounded-lg px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] transition border border-transparent hover:bg-gold/10 hover:border-gold/40 text-sand hover:text-gold"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Admin
+              Pants
             </Link>
             <Link
               href="/checkout"

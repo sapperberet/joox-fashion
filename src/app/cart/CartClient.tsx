@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import { useLanguage } from "@/components/SiteProviders";
@@ -10,6 +10,8 @@ import { useCart } from "@/components/CartProvider";
 import { copy } from "@/lib/i18n";
 import { calculateCartTotals, normalizeCartQuantity } from "@/lib/cart";
 import { formatCurrency } from "@/lib/format";
+import type { Deal } from "@/lib/types";
+import { getSupabaseBrowser } from "@/lib/supabase/browser";
 
 export default function CartClient() {
   const { locale } = useLanguage();
@@ -18,7 +20,31 @@ export default function CartClient() {
     useCart();
   const [couponInput, setCouponInput] = useState(coupon?.code ?? "");
   const [couponMessage, setCouponMessage] = useState<string | null>(null);
-  const totals = calculateCartTotals(items, coupon);
+  const [userEmail, setUserEmail] = useState<string>("");
+  const [deals, setDeals] = useState<Deal[]>([]);
+
+  const totals = useMemo(() => calculateCartTotals(items, coupon, deals), [items, coupon, deals]);
+
+  useEffect(() => {
+    fetch("/api/deals")
+      .then((response) => response.json())
+      .then((payload: { deals?: Deal[] }) => {
+        if (Array.isArray(payload.deals)) {
+          setDeals(payload.deals);
+        }
+      })
+      .catch(() => {
+        setDeals([]);
+      });
+
+    const supabase = getSupabaseBrowser();
+    if (!supabase) {
+      return;
+    }
+    supabase.auth.getSession().then(({ data }) => {
+      setUserEmail(data.session?.user.email ?? "");
+    });
+  }, []);
 
   const handleApplyCoupon = async () => {
     setCouponMessage(null);
@@ -31,21 +57,46 @@ export default function CartClient() {
     const response = await fetch("/api/coupons", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code, subtotal: totals.subtotal }),
+      body: JSON.stringify({ code, subtotal: totals.subtotal - totals.dealDiscount, email: userEmail || null }),
     });
 
     if (!response.ok) {
-      setCouponMessage(
-        locale === "ar" ? "الكوبون غير صالح" : "Invalid coupon code",
-      );
+      const payload = (await response.json().catch(() => ({ valid: false }))) as {
+        reason?: string;
+        min_score?: number;
+        min_spend?: number;
+      };
+
+      if (payload.reason === "login_required") {
+        setCouponMessage(locale === "ar" ? "سجل الدخول أولاً لتفعيل الكوبون" : "Sign in to use this coupon");
+      } else if (payload.reason === "not_claimed") {
+        setCouponMessage(locale === "ar" ? "يجب Claim الكوبون من حسابك أولاً" : "Claim this coupon first from your account");
+      } else if (payload.reason === "already_used") {
+        setCouponMessage(locale === "ar" ? "تم استخدام هذا الكوبون من قبل" : "This coupon was already used");
+      } else if (payload.reason === "requirements_not_met") {
+        const spendLabel = payload.min_spend ?? 0;
+        const scoreLabel = payload.min_score ?? 0;
+        setCouponMessage(
+          locale === "ar"
+            ? `غير مؤهل: Score ${scoreLabel}+ و Spend ${spendLabel}+`
+            : `Not eligible: Score ${scoreLabel}+ and Spend ${spendLabel}+`,
+        );
+      } else {
+        setCouponMessage(
+          locale === "ar" ? "الكوبون غير صالح" : "Invalid coupon code",
+        );
+      }
       setCoupon(null);
       return;
     }
 
     const payload = (await response.json()) as {
       valid: boolean;
-      coupon?: { code: string; type: "percent" | "fixed"; value: number };
+      coupon?: { id?: string; code: string; type: "percent" | "fixed"; value: number };
       min_subtotal?: number | null;
+      min_score?: number | null;
+      min_spend?: number | null;
+      requires_claim?: boolean;
     };
 
     if (!payload.valid || !payload.coupon) {
@@ -57,10 +108,14 @@ export default function CartClient() {
     }
 
     setCoupon({
+      id: payload.coupon.id,
       code: payload.coupon.code,
       type: payload.coupon.type,
       value: payload.coupon.value,
       min_subtotal: payload.min_subtotal ?? null,
+      min_score: payload.min_score ?? null,
+      min_spend: payload.min_spend ?? null,
+      requires_claim: payload.requires_claim ?? true,
     });
     setCouponMessage(
       locale === "ar" ? "تم تطبيق الكوبون" : "Coupon applied",
@@ -95,7 +150,7 @@ export default function CartClient() {
             <div className="space-y-4">
               {items.map((item) => (
                 <div
-                  key={item.id}
+                      key={item.cart_key ?? item.id}
                   className="grid gap-4 rounded-3xl border border-gold/15 bg-stone/80 p-5 temple-panel md:grid-cols-[96px_1fr_auto]"
                 >
                   <div className="relative h-24 w-24 overflow-hidden rounded-2xl bg-ink/40">
@@ -132,7 +187,7 @@ export default function CartClient() {
                       value={item.quantity}
                       onChange={(event) =>
                         updateQuantity(
-                          item.id,
+                          item.cart_key ?? item.id,
                           normalizeCartQuantity(
                             item,
                             Number(event.target.value),
@@ -143,7 +198,7 @@ export default function CartClient() {
                     />
                     <button
                       type="button"
-                      onClick={() => removeItem(item.id)}
+                      onClick={() => removeItem(item.cart_key ?? item.id)}
                       className="rounded-full border border-gold/30 px-3 py-2 text-xs uppercase tracking-[0.2em] text-gold"
                     >
                       {locale === "ar" ? "إزالة" : "Remove"}
@@ -174,6 +229,12 @@ export default function CartClient() {
               <div className="flex items-center justify-between text-gold">
                 <span>{locale === "ar" ? "خصم الكوبون" : "Coupon discount"}</span>
                 <span>-{formatCurrency(totals.couponDiscount, locale)}</span>
+              </div>
+            )}
+            {totals.dealDiscount > 0 && (
+              <div className="flex items-center justify-between text-gold">
+                <span>{locale === "ar" ? "خصومات العروض" : "Sales deals"}</span>
+                <span>-{formatCurrency(totals.dealDiscount, locale)}</span>
               </div>
             )}
             <div className="border-t border-gold/10 pt-3 text-lg font-semibold text-gold">

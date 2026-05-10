@@ -11,7 +11,8 @@ import { copy } from "@/lib/i18n";
 import { formatCurrency } from "@/lib/format";
 import { calculateCartTotals, calculateLineTotal } from "@/lib/cart";
 import { siteConfig, toWhatsappLink } from "@/lib/site-config";
-import type { Product } from "@/lib/types";
+import type { Deal, Product } from "@/lib/types";
+import { getSupabaseBrowser } from "@/lib/supabase/browser";
 import { createOrder } from "./actions";
 
 const INSTAPAY_LINK = "https://ipn.eg/S/youssefelasyoutyjoox/instapay/4dRPrW";
@@ -59,6 +60,8 @@ export default function CheckoutClient({ product }: CheckoutClientProps) {
   const [quantity, setQuantity] = useState(() => (product ? normalizeQuantity(minQty) : 1));
   const [estimatedTotal, setEstimatedTotal] = useState(product ? product.price : 0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [userEmail, setUserEmail] = useState<string>("");
+  const [deals, setDeals] = useState<Deal[]>([]);
   const [receiptFileName, setReceiptFileName] = useState<string | null>(null);
   const [receiptPreviewUrl, setReceiptPreviewUrl] = useState<string | null>(null);
 
@@ -69,7 +72,7 @@ export default function CheckoutClient({ product }: CheckoutClientProps) {
     "I need the wallet number for payment",
   );
 
-  const cartTotals = useMemo(() => calculateCartTotals(items, coupon), [items, coupon]);
+  const cartTotals = useMemo(() => calculateCartTotals(items, coupon, deals), [items, coupon, deals]);
 
   const subtotal = useCartMode
     ? cartTotals.subtotal
@@ -93,8 +96,9 @@ export default function CheckoutClient({ product }: CheckoutClientProps) {
       : Math.max(estimatedTotal, 0);
 
   const couponDiscount = useCartMode ? cartTotals.couponDiscount : 0;
+  const dealDiscount = useCartMode ? cartTotals.dealDiscount : 0;
   const walletDiscount = paymentMethod === "wallet" ? subtotal * siteConfig.walletDiscount : 0;
-  const total = Math.max(subtotal - walletDiscount - couponDiscount, 0);
+  const total = Math.max(subtotal - dealDiscount - walletDiscount - couponDiscount, 0);
 
   const isOutOfStock = useCartMode
     ? items.some((item) => {
@@ -110,6 +114,29 @@ export default function CheckoutClient({ product }: CheckoutClientProps) {
       }
     };
   }, [receiptPreviewUrl]);
+
+  useEffect(() => {
+    fetch("/api/deals")
+      .then((response) => response.json())
+      .then((payload: { deals?: Deal[] }) => {
+        if (Array.isArray(payload.deals)) {
+          setDeals(payload.deals);
+        }
+      })
+      .catch(() => {
+        setDeals([]);
+      });
+  }, []);
+
+  useEffect(() => {
+    const supabase = getSupabaseBrowser();
+    if (!supabase) {
+      return;
+    }
+    supabase.auth.getSession().then(({ data }) => {
+      setUserEmail(data.session?.user.email ?? "");
+    });
+  }, []);
 
   const handleSubmit = async (formData: FormData) => {
     try {
@@ -131,9 +158,15 @@ export default function CheckoutClient({ product }: CheckoutClientProps) {
         if (coupon) {
           formData.append("coupon_code", coupon.code);
         }
+        if (userEmail) {
+          formData.append("customer_email", userEmail);
+        }
       } else {
         formData.append("product_id", product?.id ?? "");
         formData.append("quantity", String(quantity));
+        if (userEmail) {
+          formData.append("customer_email", userEmail);
+        }
       }
 
       const result = await createOrder(formData);
@@ -161,6 +194,7 @@ export default function CheckoutClient({ product }: CheckoutClientProps) {
           action={handleSubmit}
           className="flex flex-col gap-4 rounded-3xl border border-gold/20 bg-stone/80 p-4 sm:gap-6 sm:p-8 temple-panel"
         >
+          {userEmail && <input type="hidden" name="customer_email" value={userEmail} />}
           <div>
             <p className="text-xs sm:text-sm uppercase tracking-[0.4em] text-gold/80 mb-2 flex items-center justify-center gap-2">
               <span>◇◇◇</span> {t.checkout.subtitle} <span>◇◇◇</span>
@@ -548,6 +582,12 @@ export default function CheckoutClient({ product }: CheckoutClientProps) {
                     <div className="flex justify-between text-sm text-emerald">
                       <span>Coupon ({coupon.code})</span>
                       <span>-{formatCurrency(couponDiscount, locale)}</span>
+                    </div>
+                  )}
+                  {dealDiscount > 0 && (
+                    <div className="flex justify-between text-sm text-emerald">
+                      <span>Sales Deals</span>
+                      <span>-{formatCurrency(dealDiscount, locale)}</span>
                     </div>
                   )}
                   {paymentMethod === "wallet" && walletDiscount > 0 && (

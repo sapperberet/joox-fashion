@@ -191,6 +191,25 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         </div>
       ) : null}
 
+      <section className="grid gap-4 sm:grid-cols-2">
+        <a
+          href={`/atelier/deals?admin_token=${encodeURIComponent(token)}`}
+          className="rounded-3xl border border-gold/25 bg-stone/80 p-6 transition hover:border-gold/50 hover:bg-stone/90"
+        >
+          <div className="text-xs uppercase tracking-[0.24em] text-gold/80">Sales Admin</div>
+          <h2 className="mt-2 font-display text-xl tracking-[0.14em] text-gold">Deals And Free Items</h2>
+          <p className="mt-2 text-sm text-sand/70">Manage buy-x-get-y deals, trigger products, and applicable free products.</p>
+        </a>
+        <a
+          href={`/atelier/coupons?admin_token=${encodeURIComponent(token)}`}
+          className="rounded-3xl border border-gold/25 bg-stone/80 p-6 transition hover:border-gold/50 hover:bg-stone/90"
+        >
+          <div className="text-xs uppercase tracking-[0.24em] text-gold/80">Coupons Admin</div>
+          <h2 className="mt-2 font-display text-xl tracking-[0.14em] text-gold">Score Triggers And Claims</h2>
+          <p className="mt-2 text-sm text-sand/70">Set score and spend requirements, monitor usage, and control customer coupon eligibility.</p>
+        </a>
+      </section>
+
       <section className="grid gap-6 lg:grid-cols-2">
         <form
           action={createCategory}

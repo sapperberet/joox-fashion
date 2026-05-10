@@ -48,6 +48,21 @@ export default async function CouponsPage({ searchParams }: CouponsPageProps) {
 
   return (
     <div className="space-y-6">
+      <div className="flex flex-wrap gap-2">
+        <a
+          href={`/atelier?token=${encodeURIComponent(token)}`}
+          className="rounded-full border border-gold/30 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-gold hover:bg-gold/10"
+        >
+          Main Admin
+        </a>
+        <a
+          href={`/atelier/deals?admin_token=${encodeURIComponent(token)}`}
+          className="rounded-full border border-gold/30 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-gold hover:bg-gold/10"
+        >
+          Sales Deals
+        </a>
+      </div>
+
       {flashMessage && (
         <div
           className={`rounded-lg px-4 py-3 text-sm ${

@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
+import { useLanguage } from "@/components/SiteProviders";
 import { formatCurrency } from "@/lib/format";
 import { calculatePoints, calculateScore, type OrderEntry } from "@/lib/order-insights";
 import { getSupabaseBrowser } from "@/lib/supabase/browser";
@@ -30,6 +31,7 @@ const emptyProfile: AccountProfile = {
 
 export default function AccountClient() {
   const router = useRouter();
+  const { locale, setLocale } = useLanguage();
   const [authReady, setAuthReady] = useState(false);
   const [userEmail, setUserEmail] = useState("");
   const [activeTab, setActiveTab] = useState<"profile" | "settings" | "points">("profile");
@@ -340,6 +342,31 @@ export default function AccountClient() {
 
         {activeTab === "settings" && (
           <div className="grid gap-4 rounded-3xl border border-gold/20 bg-stone/80 p-6 temple-panel">
+            <div className="rounded-xl border border-gold/20 bg-obsidian px-4 py-3">
+              <div className="text-xs uppercase tracking-[0.2em] text-gold/80">Language</div>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                <label className={`flex cursor-pointer items-center justify-between rounded-lg border px-3 py-2 ${locale === "en" ? "border-gold/60 bg-gold/10" : "border-gold/20 bg-obsidian/60"}`}>
+                  <span className="text-sm text-sand">🇬🇧 EN</span>
+                  <input
+                    type="radio"
+                    name="account_language"
+                    checked={locale === "en"}
+                    onChange={() => setLocale("en")}
+                    className="h-4 w-4 accent-gold"
+                  />
+                </label>
+                <label className={`flex cursor-pointer items-center justify-between rounded-lg border px-3 py-2 ${locale === "ar" ? "border-gold/60 bg-gold/10" : "border-gold/20 bg-obsidian/60"}`}>
+                  <span className="text-sm text-sand">🇪🇬 AR</span>
+                  <input
+                    type="radio"
+                    name="account_language"
+                    checked={locale === "ar"}
+                    onChange={() => setLocale("ar")}
+                    className="h-4 w-4 accent-gold"
+                  />
+                </label>
+              </div>
+            </div>
             {[
               { key: "orderUpdates", label: "Order updates and delivery changes" },
               { key: "promotions", label: "Promotions and sales notifications" },

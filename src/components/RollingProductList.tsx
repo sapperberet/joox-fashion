@@ -345,32 +345,129 @@ function RollingProductItem({ product, priority }: { product: Product; priority:
 
 export default function RollingProductList({ products }: RollingProductListProps) {
   const { locale } = useLanguage();
-  const t = copy[locale];
+  const [itemsPerPage, setItemsPerPage] = useState(4);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [direction, setDirection] = useState<"left" | "right">("right");
+  const [isPaused, setIsPaused] = useState(false);
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
-  if (!products || products.length === 0) {
-    return null;
-  }
+  const safeProducts = products ?? [];
 
-  const itemsPerPage = 4;
-  const totalPages = Math.ceil(products.length / itemsPerPage);
+  useEffect(() => {
+    const updateItemsPerPage = () => {
+      if (window.innerWidth < 640) {
+        setItemsPerPage(1);
+        return;
+      }
+      if (window.innerWidth < 1024) {
+        setItemsPerPage(2);
+        return;
+      }
+      if (window.innerWidth < 1280) {
+        setItemsPerPage(3);
+        return;
+      }
+      setItemsPerPage(4);
+    };
+
+    updateItemsPerPage();
+    window.addEventListener("resize", updateItemsPerPage);
+    return () => window.removeEventListener("resize", updateItemsPerPage);
+  }, []);
+
+  const totalPages = Math.max(Math.ceil(safeProducts.length / itemsPerPage), 1);
+  const canSlide = safeProducts.length > itemsPerPage;
 
   const goNext = () => {
-    setDirection("right");
+    if (!canSlide) {
+      return;
+    }
     setCurrentIndex((prev) => (prev + 1) % totalPages);
   };
 
   const goPrev = () => {
-    setDirection("left");
+    if (!canSlide) {
+      return;
+    }
     setCurrentIndex((prev) => (prev - 1 + totalPages) % totalPages);
   };
 
+  useEffect(() => {
+    if (currentIndex >= totalPages) {
+      setCurrentIndex(0);
+    }
+  }, [currentIndex, totalPages]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setPrefersReducedMotion(media.matches);
+    const onChange = (event: MediaQueryListEvent) => setPrefersReducedMotion(event.matches);
+    media.addEventListener("change", onChange);
+    return () => media.removeEventListener("change", onChange);
+  }, []);
+
+  useEffect(() => {
+    if (!canSlide || isPaused || prefersReducedMotion) {
+      return;
+    }
+    const timer = window.setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % totalPages);
+    }, 4500);
+    return () => window.clearInterval(timer);
+  }, [canSlide, isPaused, prefersReducedMotion, totalPages]);
+
   const startIdx = currentIndex * itemsPerPage;
-  const visibleProducts = products.slice(startIdx, startIdx + itemsPerPage);
+  const visibleProducts = safeProducts.slice(startIdx, startIdx + itemsPerPage);
+
+  if (safeProducts.length === 0) {
+    return null;
+  }
 
   return (
-    <div className="relative w-full rounded-3xl border-2 border-gold/20 bg-linear-to-br from-stone/90 via-stone/80 to-stone/70 overflow-hidden temple-panel">
+    <div
+      className="relative w-full rounded-3xl border-2 border-gold/20 bg-linear-to-br from-stone/90 via-stone/80 to-stone/70 overflow-hidden temple-panel"
+      tabIndex={0}
+      onKeyDown={(event) => {
+        if (event.key === "ArrowRight") {
+          if (locale === "ar") {
+            goPrev();
+          } else {
+            goNext();
+          }
+        }
+        if (event.key === "ArrowLeft") {
+          if (locale === "ar") {
+            goNext();
+          } else {
+            goPrev();
+          }
+        }
+      }}
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+      onFocus={() => setIsPaused(true)}
+      onBlur={() => setIsPaused(false)}
+      onTouchStart={(event) => setTouchStartX(event.touches[0]?.clientX ?? null)}
+      onTouchEnd={(event) => {
+        const endX = event.changedTouches[0]?.clientX ?? null;
+        if (touchStartX === null || endX === null) {
+          setTouchStartX(null);
+          return;
+        }
+        const delta = endX - touchStartX;
+        if (Math.abs(delta) >= 45) {
+          if (delta > 0) {
+            goPrev();
+          } else {
+            goNext();
+          }
+        }
+        setTouchStartX(null);
+      }}
+    >
       <div className="absolute inset-0 bg-linear-to-r from-obsidian/20 via-transparent to-obsidian/20 pointer-events-none" />
       
       <div className="relative z-10 flex items-center justify-between px-6 sm:px-8 py-5 sm:py-6 border-b-2 border-gold/20">
@@ -389,7 +486,8 @@ export default function RollingProductList({ products }: RollingProductListProps
           <button
             type="button"
             onClick={goPrev}
-            className="flex items-center justify-center w-8 h-8 rounded-full border border-gold/50 text-gold hover:border-gold hover:bg-gold/10 transition-all duration-300"
+            disabled={!canSlide}
+            className="flex items-center justify-center w-8 h-8 rounded-full border border-gold/50 text-gold hover:border-gold hover:bg-gold/10 transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
             aria-label="Previous"
           >
             {locale === "ar" ? "→" : "←"}
@@ -400,7 +498,8 @@ export default function RollingProductList({ products }: RollingProductListProps
           <button
             type="button"
             onClick={goNext}
-            className="flex items-center justify-center w-8 h-8 rounded-full border border-gold/50 text-gold hover:border-gold hover:bg-gold/10 transition-all duration-300"
+            disabled={!canSlide}
+            className="flex items-center justify-center w-8 h-8 rounded-full border border-gold/50 text-gold hover:border-gold hover:bg-gold/10 transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
             aria-label="Next"
           >
             {locale === "ar" ? "←" : "→"}
@@ -410,13 +509,8 @@ export default function RollingProductList({ products }: RollingProductListProps
 
       <div className="relative overflow-hidden px-4 py-8 sm:py-10">
         <div
-          className={`flex gap-4 sm:gap-6 transition-all duration-500 ease-in-out ${
-            direction === "right" ? "translate-x-0" : "translate-x-0"
-          }`}
-          style={{
-            transform: `translateX(0)`,
-            opacity: 1,
-          }}
+          className="flex gap-4 sm:gap-6 transition-all duration-500 ease-in-out"
+          key={currentIndex}
         >
           {visibleProducts.map((product, idx) => (
             <RollingProductItem
@@ -425,16 +519,29 @@ export default function RollingProductList({ products }: RollingProductListProps
               priority={idx < 2}
             />
           ))}
+          {visibleProducts.length < itemsPerPage &&
+            Array.from({ length: itemsPerPage - visibleProducts.length }).map((_, idx) => (
+              <div
+                key={`empty-${idx}`}
+                className="shrink-0 w-56 sm:w-64 md:w-72 h-96 rounded-2xl border-2 border-gold/30 bg-obsidian/30 animate-pulse"
+              />
+            ))}
         </div>
-        
-        {visibleProducts.length < itemsPerPage &&
-          Array.from({ length: itemsPerPage - visibleProducts.length }).map((_, idx) => (
-            <div
-              key={`empty-${idx}`}
-              className="shrink-0 w-56 sm:w-64 md:w-72 h-96 rounded-2xl border-2 border-gold/30 bg-obsidian/30 animate-pulse"
+      </div>
+
+      {canSlide && (
+        <div className="relative z-10 flex items-center justify-center gap-1.5 px-4 pb-5">
+          {Array.from({ length: totalPages }).map((_, page) => (
+            <button
+              key={`rolling-page-${page}`}
+              type="button"
+              onClick={() => setCurrentIndex(page)}
+              aria-label={`Go to page ${page + 1}`}
+              className={`h-2.5 rounded-full transition-all ${currentIndex === page ? "w-6 bg-gold" : "w-2.5 bg-sand/45 hover:bg-gold/70"}`}
             />
           ))}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

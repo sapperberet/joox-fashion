@@ -106,17 +106,7 @@ export default function CouponsClient({ coupons, adminToken }: CouponsClientProp
                 </button>
 
                 {isExpanded && (
-                  <form
-                    action={setCouponRequirements}
-                    className="border-t border-gold/20 p-4 bg-obsidian/20 space-y-4"
-                  >
-                    <input
-                      type="hidden"
-                      name="admin_token"
-                      value={adminToken}
-                    />
-                    <input type="hidden" name="coupon_id" value={coupon.id} />
-
+                  <div className="border-t border-gold/20 p-4 bg-obsidian/20 space-y-4">
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div>
                         <label className="block text-xs font-semibold uppercase tracking-[0.2em] text-gold/80 mb-1">
@@ -163,14 +153,24 @@ export default function CouponsClient({ coupons, adminToken }: CouponsClientProp
                     </div>
 
                     <div className="flex gap-2">
-                      <button
-                        type="submit"
-                        className="rounded-lg bg-gold px-4 py-2 text-sm font-semibold text-ink hover:bg-gold/90 transition-all"
-                      >
-                        Save
-                      </button>
+                      <form action={setCouponRequirements}>
+                        <input
+                          type="hidden"
+                          name="admin_token"
+                          value={adminToken}
+                        />
+                        <input type="hidden" name="coupon_id" value={coupon.id} />
+                        <input type="hidden" name="min_score" value={current.min_score} />
+                        <input type="hidden" name="min_spend" value={current.min_spend} />
+                        <button
+                          type="submit"
+                          className="rounded-lg bg-gold px-4 py-2 text-sm font-semibold text-ink hover:bg-gold/90 transition-all"
+                        >
+                          Save
+                        </button>
+                      </form>
                       {coupon.requirement && (
-                        <form action={deleteCouponRequirements} className="inline">
+                        <form action={deleteCouponRequirements}>
                           <input
                             type="hidden"
                             name="admin_token"
@@ -190,7 +190,7 @@ export default function CouponsClient({ coupons, adminToken }: CouponsClientProp
                         </form>
                       )}
                     </div>
-                  </form>
+                  </div>
                 )}
               </div>
             );

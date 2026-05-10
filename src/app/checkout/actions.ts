@@ -4,11 +4,11 @@ import { Buffer } from "node:buffer";
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { createBostaDelivery } from "@/lib/bosta";
-import { calculateLineTotal } from "@/lib/cart";
+import { calculateDealsDiscount, calculateLineTotal } from "@/lib/cart";
 import { getVariantPrice } from "@/lib/product-display";
 import { siteConfig } from "@/lib/site-config";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import type { CartCoupon, CartItem, ProductVariant } from "@/lib/types";
+import type { CartCoupon, CartItem, Deal, ProductVariant } from "@/lib/types";
 
 type SubmittedItem = {
   id: string;
@@ -106,47 +106,96 @@ async function resolveCoupon(
   supabase: ReturnType<typeof getSupabaseAdmin>,
   code: string | null,
   subtotal: number,
-): Promise<{ coupon: (CartCoupon & { max_uses?: number | null; used_count?: number | null }) | null; couponDiscount: number }> {
+  customerEmail: string | null,
+): Promise<{
+  coupon: (CartCoupon & { id?: string; max_uses?: number | null; used_count?: number | null }) | null;
+  couponDiscount: number;
+  requiresClaim: boolean;
+}> {
   if (!code) {
-    return { coupon: null, couponDiscount: 0 };
+    return { coupon: null, couponDiscount: 0, requiresClaim: false };
   }
 
   const now = new Date();
   const { data, error } = await supabase
     .from("coupons")
-    .select("code, type, value, min_subtotal, max_uses, used_count, starts_at, expires_at, is_active")
+    .select("id, code, type, value, min_subtotal, max_uses, used_count, starts_at, expires_at, is_active")
     .eq("code", code)
     .eq("is_active", true)
     .single();
 
   if (error || !data) {
-    return { coupon: null, couponDiscount: 0 };
+    return { coupon: null, couponDiscount: 0, requiresClaim: false };
   }
 
   if (typeof data.max_uses === "number" && (data.used_count ?? 0) >= data.max_uses) {
-    return { coupon: null, couponDiscount: 0 };
+    return { coupon: null, couponDiscount: 0, requiresClaim: false };
   }
 
   if (data.starts_at && new Date(data.starts_at) > now) {
-    return { coupon: null, couponDiscount: 0 };
+    return { coupon: null, couponDiscount: 0, requiresClaim: false };
   }
 
   if (data.expires_at && new Date(data.expires_at) < now) {
-    return { coupon: null, couponDiscount: 0 };
+    return { coupon: null, couponDiscount: 0, requiresClaim: false };
+  }
+
+  const { data: requirement } = await supabase
+    .from("coupon_requirements")
+    .select("min_score, min_spend")
+    .eq("coupon_id", data.id)
+    .maybeSingle();
+
+  if (requirement) {
+    if (!customerEmail) {
+      return { coupon: null, couponDiscount: 0, requiresClaim: true };
+    }
+
+    const { data: profile } = await supabase
+      .from("customer_profiles")
+      .select("points, score")
+      .eq("email", customerEmail)
+      .maybeSingle();
+
+    const score = Number(profile?.score ?? 0);
+    const spend = Number(profile?.points ?? 0) * 10;
+    const minScore = Number(requirement.min_score ?? 0);
+    const minSpend = Number(requirement.min_spend ?? 0);
+
+    if (score < minScore || spend < minSpend) {
+      return { coupon: null, couponDiscount: 0, requiresClaim: true };
+    }
+  }
+
+  if (customerEmail) {
+    const { data: claim } = await supabase
+      .from("customer_coupon_claims")
+      .select("id, used")
+      .eq("coupon_id", data.id)
+      .eq("email", customerEmail)
+      .maybeSingle();
+
+    if (!claim || claim.used) {
+      return { coupon: null, couponDiscount: 0, requiresClaim: true };
+    }
   }
 
   const coupon: (CartCoupon & { max_uses?: number | null; used_count?: number | null }) = {
+    id: data.id,
     code: data.code,
     type: data.type,
     value: Number(data.value ?? 0),
     min_subtotal: data.min_subtotal ?? null,
     max_uses: data.max_uses ?? null,
     used_count: data.used_count ?? null,
+    min_score: requirement?.min_score ?? 0,
+    min_spend: requirement?.min_spend ?? 0,
+    requires_claim: true,
   };
 
   const minSubtotal = coupon.min_subtotal ?? 0;
   if (subtotal < minSubtotal) {
-    return { coupon: null, couponDiscount: 0 };
+    return { coupon: null, couponDiscount: 0, requiresClaim: Boolean(requirement) };
   }
 
   let couponDiscount = 0;
@@ -157,7 +206,7 @@ async function resolveCoupon(
   }
 
   couponDiscount = Math.max(0, Math.min(couponDiscount, subtotal));
-  return { coupon, couponDiscount };
+  return { coupon, couponDiscount, requiresClaim: true };
 }
 
 export async function createOrder(formData: FormData) {
@@ -173,9 +222,10 @@ export async function createOrder(formData: FormData) {
   const floor = String(formData.get("floor") ?? "").trim();
   const apartment = String(formData.get("apartment") ?? "").trim();
   const notes = String(formData.get("notes") ?? "").trim();
+  const customerEmail = String(formData.get("customer_email") ?? "").trim().toLowerCase() || null;
 
   const paymentMethod =
-    (formData.get("payment_method") as "cod" | "wallet" | null) ?? "cod";
+    (formData.get("payment_method") as "cod" | "wallet" | "instapay" | null) ?? "cod";
 
   if (!name || !phone || !city || !district || !address) {
     return { success: false, error: "Missing required customer details." };
@@ -265,16 +315,35 @@ export async function createOrder(formData: FormData) {
 
   const lineBreakdown = cartItems.map((item) => ({ item, line: calculateLineTotal(item) }));
   const subtotal = lineBreakdown.reduce((sum, entry) => sum + entry.line.total, 0);
-  const walletDiscount = paymentMethod === "wallet" ? subtotal * siteConfig.walletDiscount : 0;
+  const { data: activeDeals } = await supabase
+    .from("deals")
+    .select("id, name_en, name_ar, deal_type, trigger_product_ids, applicable_product_ids, buy_quantity, free_quantity, is_active")
+    .eq("is_active", true);
+
+  const deals = (activeDeals ?? []) as Deal[];
+  const dealDiscount = Math.min(calculateDealsDiscount(cartItems, deals), subtotal);
+  const discountedSubtotal = Math.max(subtotal - dealDiscount, 0);
+
+  const walletDiscount = paymentMethod === "wallet" ? discountedSubtotal * siteConfig.walletDiscount : 0;
 
   const submittedCouponCode = String(formData.get("coupon_code") ?? "").trim() || null;
-  const { coupon, couponDiscount } = await resolveCoupon(
+  const { coupon, couponDiscount, requiresClaim } = await resolveCoupon(
     supabase,
     submittedCouponCode,
-    subtotal,
+    discountedSubtotal,
+    customerEmail,
   );
 
-  const total = Math.max(subtotal - walletDiscount - couponDiscount, 0);
+  if (submittedCouponCode && !coupon) {
+    return {
+      success: false,
+      error: requiresClaim
+        ? "Coupon claim or requirements are not valid for this account."
+        : "Coupon is invalid or unavailable.",
+    };
+  }
+
+  const total = Math.max(discountedSubtotal - walletDiscount - couponDiscount, 0);
   const orderId = randomUUID();
 
   const receiptFile = formData.get("receipt") as File | null;
@@ -332,11 +401,21 @@ export async function createOrder(formData: FormData) {
     } catch (err) {
       return { success: false, error: "Failed to reserve coupon." };
     }
+
+    if (customerEmail && coupon.id) {
+      await supabase
+        .from("customer_coupon_claims")
+        .update({ used: true, used_at: new Date().toISOString() })
+        .eq("coupon_id", coupon.id)
+        .eq("email", customerEmail)
+        .eq("used", false);
+    }
   }
 
   const { error: insertError } = await supabase.from("orders").insert({
     id: orderId,
     customer_name: name,
+    customer_email: customerEmail,
     phone,
     address,
     city,
@@ -350,7 +429,7 @@ export async function createOrder(formData: FormData) {
     payment_status: "pending",
     receipt_url: receiptUrl,
     subtotal,
-    discount: walletDiscount,
+    discount: walletDiscount + dealDiscount,
     coupon_code: coupon?.code ?? null,
     coupon_discount: couponDiscount,
     total,

@@ -31,10 +31,23 @@ async function getCategories(): Promise<Category[]> {
   return data ?? [];
 }
 
-export default async function ProductsPage() {
+type ProductsPageProps = {
+  searchParams?: {
+    category?: string;
+  };
+};
+
+export default async function ProductsPage({ searchParams }: ProductsPageProps) {
   const [products, categories] = await Promise.all([
     getProducts(),
     getCategories(),
   ]);
-  return <ProductsClient products={products} categories={categories} />;
+  const category = String(searchParams?.category ?? "").trim().toLowerCase();
+  return (
+    <ProductsClient
+      products={products}
+      categories={categories}
+      initialCategorySlug={category}
+    />
+  );
 }

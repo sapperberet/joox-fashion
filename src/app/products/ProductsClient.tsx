@@ -12,6 +12,7 @@ import type { Category, Product, Season } from "@/lib/types";
 type ProductsClientProps = {
   products: Product[];
   categories: Category[];
+  initialCategorySlug?: string;
 };
 
 type SeasonFilter = Season | "all";
@@ -19,18 +20,39 @@ type SortOption = "newest" | "priceLow" | "priceHigh";
 
 export default function ProductsClient({
   products,
+  categories,
+  initialCategorySlug,
 }: ProductsClientProps) {
   const { locale } = useLanguage();
   const t = copy[locale];
+  const normalizedInitialCategory = ["tops", "pants"].includes(String(initialCategorySlug ?? "").toLowerCase())
+    ? String(initialCategorySlug).toLowerCase()
+    : "all";
   const [seasonFilter, setSeasonFilter] = useState<SeasonFilter>("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>(normalizedInitialCategory);
   const [eventFilter, setEventFilter] = useState<"all" | "featured" | "sale" | "new" | "inStock" | "outOfStock">("all");
   const [sortBy, setSortBy] = useState<SortOption>("newest");
   const [search, setSearch] = useState("");
+
+  const categoryById = useMemo(() => {
+    const map = new Map<string, Category>();
+    for (const category of categories) {
+      map.set(category.id, category);
+    }
+    return map;
+  }, [categories]);
 
   const visibleProducts = useMemo(() => {
     let filtered = products.filter((product) => {
       const seasonMatch =
         seasonFilter === "all" || product.season === seasonFilter;
+      const category = product.category_id ? categoryById.get(product.category_id) : undefined;
+      const categorySlug = String(category?.slug ?? "").toLowerCase();
+      const categoryName = `${String(category?.name_en ?? "")} ${String(category?.name_ar ?? "")}`.toLowerCase();
+      const categoryMatch =
+        categoryFilter === "all" ||
+        categorySlug === categoryFilter ||
+        categoryName.includes(categoryFilter);
       const stock = product.stock_qty ?? null;
       const isOutOfStock = stock !== null && stock <= 0;
       const isNew = product.created_at ? Date.now() - Date.parse(product.created_at) < 1000 * 60 * 60 * 24 * 14 : false;
@@ -46,7 +68,7 @@ export default function ProductsClient({
         .join(" ")
         .toLowerCase();
       const searchMatch = !search.trim() || text.includes(search.trim().toLowerCase());
-      return seasonMatch && eventMatch && searchMatch;
+      return seasonMatch && categoryMatch && eventMatch && searchMatch;
     });
 
     if (sortBy === "priceLow") {
@@ -64,7 +86,7 @@ export default function ProductsClient({
     }
 
     return filtered;
-  }, [products, seasonFilter, eventFilter, sortBy, search]);
+  }, [products, seasonFilter, categoryFilter, categoryById, eventFilter, sortBy, search]);
 
   return (
     <div className="relative">
@@ -134,6 +156,31 @@ export default function ProductsClient({
                     onClick={() => setSeasonFilter(option.value as SeasonFilter)}
                     className={`rounded-full border px-3 py-2 sm:px-4 sm:py-2.5 text-xs sm:text-sm uppercase tracking-[0.2em] transition ${
                       seasonFilter === option.value
+                        ? "border-gold bg-gold text-ink font-semibold"
+                        : "border-gold/30 text-sand hover:border-gold/60 hover:bg-gold/5"
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <div className="text-xs sm:text-sm uppercase tracking-[0.2em] text-gold mb-3 sm:mb-4 font-semibold flex items-center gap-2">
+                <span>◈</span> Category
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { value: "all", label: "All" },
+                  { value: "tops", label: "Tops" },
+                  { value: "pants", label: "Pants" },
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setCategoryFilter(option.value)}
+                    className={`rounded-full border px-3 py-2 sm:px-4 sm:py-2.5 text-xs sm:text-sm uppercase tracking-[0.2em] transition ${
+                      categoryFilter === option.value
                         ? "border-gold bg-gold text-ink font-semibold"
                         : "border-gold/30 text-sand hover:border-gold/60 hover:bg-gold/5"
                     }`}
