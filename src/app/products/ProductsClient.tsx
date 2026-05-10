@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import ProductCard from "@/components/ProductCard";
+import RollingProductList from "@/components/RollingProductList";
 import { copy } from "@/lib/i18n";
 import { useLanguage } from "@/components/SiteProviders";
 import type { Category, Product, Season } from "@/lib/types";
@@ -86,6 +87,8 @@ export default function ProductsClient({
           </div>
         </div>
         
+        <RollingProductList products={products.slice(0, 6)} />
+
         {/* Filter Section with Egyptian Styling */}
         <div className="rounded-3xl border-2 border-gold/20 bg-gradient-to-br from-stone/90 to-stone/80 p-5 sm:p-8 shadow-lg temple-panel">
           <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gold/20">

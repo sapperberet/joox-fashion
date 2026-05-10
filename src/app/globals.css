@@ -1,5 +1,36 @@
 @import "tailwindcss";
 
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+input[type="text"][pattern] {
+  -moz-appearance: textfield;
+}
+
+input[type="text"][inputmode="numeric"],
+input[type="text"][inputmode="decimal"] {
+  -webkit-appearance: none;
+  -moz-appearance: textfield;
+  appearance: none;
+}
+
+input[type="text"][inputmode="numeric"]::-webkit-outer-spin-button,
+input[type="text"][inputmode="numeric"]::-webkit-inner-spin-button,
+input[type="text"][inputmode="decimal"]::-webkit-outer-spin-button,
+input[type="text"][inputmode="decimal"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+
+
 :root {
   --obsidian: #0c0a07;
   --sand: #f4e6c9;

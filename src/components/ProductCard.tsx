@@ -95,15 +95,26 @@ export default function ProductCard({ product }: ProductCardProps) {
               formatCurrency(product.price, locale)
             )}
           </div>
-          <button
-            type="button"
-            onClick={(event) => {
-              event.stopPropagation();
-              addItem(product, 1);
-            }}
-            className="w-full rounded-full bg-gold px-3 py-2.5 sm:px-4 sm:py-3 text-ink text-xs sm:text-sm uppercase tracking-[0.2em] font-semibold transition hover:bg-gold/90 inline-flex items-center justify-center gap-1">
-            {t.products.order}
-          </button>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                router.push(`/checkout?product=${product.slug}`);
+              }}
+              className="w-full rounded-full bg-gold px-3 py-2.5 sm:px-4 sm:py-3 text-ink text-xs sm:text-sm uppercase tracking-[0.2em] font-semibold transition hover:bg-gold/90 inline-flex items-center justify-center gap-1">
+              {t.products.order}
+            </button>
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                addItem(product, 1);
+              }}
+              className="w-full rounded-full border border-gold/40 px-3 py-2.5 sm:px-4 sm:py-3 text-gold text-xs sm:text-sm uppercase tracking-[0.2em] font-semibold transition hover:bg-gold/10 inline-flex items-center justify-center gap-1">
+              {t.products.addToBasket}
+            </button>
+          </div>
         </div>
       </div>
     </div>

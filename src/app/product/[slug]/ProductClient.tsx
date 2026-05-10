@@ -102,7 +102,7 @@ export default function ProductClient({
                 onClick={() => addItem(product, 1)}
                 className="rounded-full border-2 border-gold/40 px-4 py-2.5 sm:px-6 sm:py-3 text-xs font-semibold uppercase tracking-[0.2em] text-gold transition hover:bg-gold/10 hover:border-gold/60 text-center sm:text-left inline-flex items-center justify-center gap-2"
               >
-                𓋹 {t.nav.cart}
+                𓋹 {t.products.addToBasket}
               </button>
               <Link
                 href="/products"

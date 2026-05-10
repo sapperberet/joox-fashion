@@ -500,110 +500,172 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
       </section>
 
       <section className="rounded-3xl border border-gold/20 bg-stone/80 p-6">
-        <h2 className="font-display text-xl tracking-[0.2em] text-gold">
+        <h2 className="font-display text-xl tracking-[0.2em] text-gold mb-6">
           {labels.orders}
         </h2>
-        <div className="mt-4 space-y-3">
+        <div className="space-y-4">
           {orders.map((order) => (
             <div
               key={order.id}
-              className="flex flex-col gap-3 rounded-2xl border border-gold/10 bg-obsidian/70 px-4 py-4 text-sm text-sand"
+              className="rounded-2xl border-2 border-gold/20 bg-gradient-to-br from-obsidian/80 to-obsidian/60 overflow-hidden hover:border-gold/40 transition"
             >
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <div>{order.customer_name}</div>
-                  <div className="text-xs text-sand/60">{order.phone}</div>
+              <div className="grid gap-4 lg:grid-cols-3 p-4 sm:p-6">
+                <div className="lg:col-span-1 space-y-3">
+                  <div>
+                    <div className="text-xs uppercase tracking-[0.2em] text-gold/60 font-semibold">Order ID</div>
+                    <div className="font-mono text-sm text-gold font-bold mt-1 break-all">{order.id}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs uppercase tracking-[0.2em] text-sand/60 font-semibold">Customer</div>
+                    <div className="mt-1">
+                      <div className="font-semibold text-sand">{order.customer_name}</div>
+                      <div className="text-xs text-sand/60 font-mono">{order.phone}</div>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs uppercase tracking-[0.2em] text-sand/60 font-semibold">Address</div>
+                    <div className="text-xs text-sand/70 mt-1">
+                      {order.address}
+                      {order.building_number && `, Building ${order.building_number}`}
+                      {order.floor && `, Floor ${order.floor}`}
+                      {order.apartment && `, Apt ${order.apartment}`}
+                      <br />
+                      {order.city}
+                      {order.district && `, ${order.district}`}
+                    </div>
+                  </div>
                 </div>
-                <div className="text-gold">
-                  {formatCurrency(order.total, "en")}
+
+                <div className="lg:col-span-1 space-y-3">
+                  <div className="text-xl sm:text-2xl font-bold text-gold">{formatCurrency(order.total, "en")}</div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="rounded-lg bg-gold/10 border border-gold/20 p-2">
+                      <div className="text-xs text-sand/60">Payment</div>
+                      <div className={`text-xs font-bold mt-1 ${
+                        order.payment_status === "paid" ? "text-emerald" :
+                        order.payment_status === "pending" ? "text-gold" :
+                        "text-red-400"
+                      }`}>
+                        {order.payment_status?.toUpperCase() || "PENDING"}
+                      </div>
+                    </div>
+                    <div className="rounded-lg bg-gold/10 border border-gold/20 p-2">
+                      <div className="text-xs text-sand/60">Shipping</div>
+                      <div className={`text-xs font-bold mt-1 ${
+                        order.shipping_state === "delivered" ? "text-emerald" :
+                        order.shipping_state === "in_transit" ? "text-gold" :
+                        "text-sand/60"
+                      }`}>
+                        {order.shipping_state?.toUpperCase() || "PENDING"}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-xs text-sand/60">
+                    Method: <span className="text-sand font-semibold">{order.payment_method.toUpperCase()}</span>
+                  </div>
+                  {order.shipping_tracking_number && (
+                    <div className="rounded-lg border border-gold/20 bg-gold/5 px-3 py-2 text-xs">
+                      <div className="text-sand/60">Tracking</div>
+                      <div className="font-mono text-gold mt-1 break-all">{order.shipping_tracking_number}</div>
+                    </div>
+                  )}
+                  {order.shipping_reference && !order.shipping_tracking_number && (
+                    <div className="rounded-lg border border-gold/20 bg-gold/5 px-3 py-2 text-xs">
+                      <div className="text-sand/60">Ref</div>
+                      <div className="font-mono text-gold mt-1 break-all">{order.shipping_reference}</div>
+                    </div>
+                  )}
+                  {order.shipping_error && (
+                    <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-400">
+                      ⚠️ {order.shipping_error}
+                    </div>
+                  )}
                 </div>
-              </div>
-              <div className="text-xs text-sand/60">
-                {order.city}
-                {order.district ? `, ${order.district}` : ""} — {order.address}
-              </div>
-              <div className="flex flex-wrap items-center justify-between gap-3 text-xs uppercase tracking-[0.2em] text-sand/60">
-                <span>{order.payment_method}</span>
-                {order.receipt_url && (
-                  <a
-                    href={order.receipt_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-gold"
+
+                <div className="lg:col-span-1 space-y-3">
+                  {order.receipt_url && (
+                    <div className="rounded-lg overflow-hidden border border-gold/20">
+                      <div className="relative h-32 bg-obsidian flex items-center justify-center">
+                        <Image
+                          src={order.receipt_url}
+                          alt="Receipt"
+                          fill
+                          className="object-contain p-2"
+                          unoptimized
+                        />
+                      </div>
+                      <div className="p-2 bg-obsidian/50 border-t border-gold/10">
+                        <a
+                          href={order.receipt_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-xs text-gold hover:text-gold/70 font-semibold"
+                        >
+                          View Full Receipt →
+                        </a>
+                      </div>
+                    </div>
+                  )}
+                  <form
+                    action={updateOrderStatus}
+                    className="space-y-2 rounded-lg border border-gold/20 bg-obsidian/80 p-3"
                   >
-                    {labels.receipt}
-                  </a>
-                )}
+                    <input type="hidden" name="admin_token" value={token} />
+                    <input type="hidden" name="order_id" value={order.id} />
+                    <label className="flex flex-col gap-1">
+                      <span className="text-xs uppercase tracking-[0.2em] text-sand/60 font-semibold">
+                        {labels.status}
+                      </span>
+                      <select
+                        name="status"
+                        defaultValue={order.status ?? "new"}
+                        className="rounded-lg border border-gold/20 bg-obsidian px-2 py-1.5 text-xs text-sand"
+                      >
+                        {statusOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="flex flex-col gap-1">
+                      <span className="text-xs uppercase tracking-[0.2em] text-sand/60 font-semibold">
+                        {labels.paymentStatus}
+                      </span>
+                      <select
+                        name="payment_status"
+                        defaultValue={order.payment_status ?? "pending"}
+                        className="rounded-lg border border-gold/20 bg-obsidian px-2 py-1.5 text-xs text-sand"
+                      >
+                        {paymentOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="flex flex-col gap-1">
+                      <span className="text-xs uppercase tracking-[0.2em] text-sand/60 font-semibold">
+                        {labels.shippingStatus}
+                      </span>
+                      <select
+                        name="shipping_state"
+                        defaultValue={order.shipping_state ?? "pending"}
+                        className="rounded-lg border border-gold/20 bg-obsidian px-2 py-1.5 text-xs text-sand"
+                      >
+                        {shippingOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <button className="w-full rounded-lg border border-gold/40 bg-gold/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-gold hover:bg-gold/20 transition">
+                      {labels.update}
+                    </button>
+                  </form>
+                </div>
               </div>
-              {(order.shipping_tracking_number || order.shipping_reference) && (
-                <div className="text-xs text-sand/60">
-                  {order.shipping_provider ? `${order.shipping_provider}: ` : ""}
-                  {order.shipping_tracking_number ?? order.shipping_reference}
-                </div>
-              )}
-              {order.shipping_error && (
-                <div className="text-xs text-clay">{order.shipping_error}</div>
-              )}
-              <form
-                action={updateOrderStatus}
-                className="grid gap-3 rounded-2xl border border-gold/10 bg-obsidian/80 p-3 text-xs"
-              >
-                <input type="hidden" name="admin_token" value={token} />
-                <input type="hidden" name="order_id" value={order.id} />
-                <div className="grid gap-3 md:grid-cols-3">
-                  <label className="flex flex-col gap-2">
-                    <span className="uppercase tracking-[0.2em] text-sand/60">
-                      {labels.status}
-                    </span>
-                    <select
-                      name="status"
-                      defaultValue={order.status ?? "new"}
-                      className="rounded-xl border border-gold/20 bg-obsidian px-3 py-2 text-sand"
-                    >
-                      {statusOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="flex flex-col gap-2">
-                    <span className="uppercase tracking-[0.2em] text-sand/60">
-                      {labels.paymentStatus}
-                    </span>
-                    <select
-                      name="payment_status"
-                      defaultValue={order.payment_status ?? "pending"}
-                      className="rounded-xl border border-gold/20 bg-obsidian px-3 py-2 text-sand"
-                    >
-                      {paymentOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="flex flex-col gap-2">
-                    <span className="uppercase tracking-[0.2em] text-sand/60">
-                      {labels.shippingStatus}
-                    </span>
-                    <select
-                      name="shipping_state"
-                      defaultValue={order.shipping_state ?? "pending"}
-                      className="rounded-xl border border-gold/20 bg-obsidian px-3 py-2 text-sand"
-                    >
-                      {shippingOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                </div>
-                <button className="w-fit rounded-full border border-gold/40 px-4 py-2 font-semibold uppercase tracking-[0.2em] text-gold">
-                  {labels.update}
-                </button>
-              </form>
             </div>
           ))}
         </div>

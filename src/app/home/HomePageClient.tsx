@@ -5,6 +5,7 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import LogoMark from "@/components/LogoMark";
 import ProductCard from "@/components/ProductCard";
+import RollingProductList from "@/components/RollingProductList";
 import { copy } from "@/lib/i18n";
 import { fallbackCategories, siteConfig, toWhatsappLink } from "@/lib/site-config";
 import { useLanguage } from "@/components/SiteProviders";
@@ -119,6 +120,12 @@ export default function HomePageClient({
             </div>
           </div>
         </section>
+
+        <div className="px-4 sm:px-6">
+          <div className="mx-auto max-w-6xl">
+            <RollingProductList products={products.slice(0, 8)} />
+          </div>
+        </div>
 
         <section id="collections" className="px-4 sm:px-6">
           <div className="mx-auto flex max-w-6xl flex-col gap-6 sm:gap-8">
