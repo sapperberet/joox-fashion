@@ -5,7 +5,6 @@ import Image from 'next/image';
 interface Product {
   id: string;
   name: string;
-  slug: string;
   imageUrl: string;
   price: number;
 }
@@ -18,35 +17,30 @@ const fetchMostSoldProducts = async (): Promise<Product[]> => {
         {
           id: '1',
           name: 'Classic T-Shirt',
-          slug: 'classic-t-shirt',
           imageUrl: '/joox-fashion.png',
           price: 19.99,
         },
         {
           id: '2',
           name: 'Denim Jeans',
-          slug: 'denim-jeans',
           imageUrl: '/joox-fashion.png',
           price: 49.99,
         },
         {
           id: '3',
           name: 'Summer Dress',
-          slug: 'summer-dress',
           imageUrl: '/joox-fashion.png',
           price: 34.50,
         },
         {
           id: '4',
           name: 'Leather Jacket',
-          slug: 'leather-jacket',
           imageUrl: '/joox-fashion.png',
           price: 120.00,
         },
         {
           id: '5',
           name: 'Sport Shoes',
-          slug: 'sport-shoes',
           imageUrl: '/joox-fashion.png',
           price: 75.00,
         },
@@ -75,8 +69,8 @@ const MostSoldProductsCarousel: React.FC = () => {
       <h2 className="text-2xl font-bold text-center mb-6">Most Sold Products</h2>
       <div className="flex animate-carousel">
         {products.map((product) => (
-          <div key={product.id} className="flex-shrink-0 w-64 mx-4">
-            <Link href={`/product/${product.slug}`}>
+          <div key={product.id} className="shrink-0 w-64 mx-4">
+            <Link href={`/product/${product.id}`}>
               <a className="block">
                 <div className="relative w-full h-48 bg-gray-100 rounded-lg overflow-hidden">
                   <Image

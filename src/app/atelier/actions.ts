@@ -3,31 +3,118 @@
 import { Buffer } from "node:buffer";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import {
-  createAdminToken,
-  verifyAdminToken,
-  verifyCredentials,
-} from "@/lib/admin-auth";
+import { createAdminToken, verifyAdminToken, verifyCredentials } from "@/lib/admin-auth";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { siteConfig } from "@/lib/site-config";
 
-function requireAdmin(formData: FormData) {
-  const token = String(formData.get("admin_token") ?? "");
-  if (!verifyAdminToken(token)) {
-    redirect(siteConfig.adminRoute);
+type FlashCode =
+  | "loginSuccess"
+  | "loginFailed"
+  | "categoryCreated"
+  | "categoryDeleted"
+  | "productCreated"
+  | "productUpdated"
+  | "productDeleted"
+  | "productToggled"
+  | "couponCreated"
+  | "couponUpdated"
+  | "couponDeleted"
+  | "orderUpdated"
+  | "actionFailed"
+  | "missingData";
+
+function toSlug(value: string) {
+  const normalized = value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-");
+  return normalized || `item-${Date.now()}`;
+}
+
+function getReturnUrl(token: string | null, flash?: FlashCode) {
+  const params = new URLSearchParams();
+  if (token) {
+    params.set("token", token);
   }
+  if (flash) {
+    params.set("flash", flash);
+    params.set("kind", flash === "actionFailed" || flash === "missingData" || flash === "loginFailed" ? "error" : "success");
+  }
+  const query = params.toString();
+  return query ? `${siteConfig.adminRoute}?${query}` : siteConfig.adminRoute;
+}
+
+function redirectTo(token: string | null, flash?: FlashCode) {
+  redirect(getReturnUrl(token, flash));
+}
+
+function readToken(formData: FormData) {
+  return String(formData.get("admin_token") ?? "").trim();
+}
+
+function requireAdmin(formData: FormData) {
+  const token = readToken(formData);
+  if (!verifyAdminToken(token)) {
+    redirectTo(null, "loginFailed");
+  }
+  return token;
+}
+
+function readBoolean(formData: FormData, name: string, fallback = false) {
+  const values = formData.getAll(name).map((value) => String(value).trim().toLowerCase());
+  if (values.length === 0) {
+    return fallback;
+  }
+  return values.some((value) => value === "true" || value === "on" || value === "1");
+}
+
+function readNumber(input: FormDataEntryValue | null, fallback: number | null = null) {
+  const raw = String(input ?? "").trim();
+  if (!raw) {
+    return fallback;
+  }
+  const value = Number(raw);
+  return Number.isFinite(value) ? value : fallback;
+}
+
+function readText(formData: FormData, name: string) {
+  return String(formData.get(name) ?? "").trim();
+}
+
+async function uploadImage(file: File | null, folder: string, slug: string) {
+  if (!file || file.size === 0) {
+    return null;
+  }
+
+  const supabase = getSupabaseAdmin();
+  const ext = file.name.split(".").pop() || "jpg";
+  const filePath = `${folder}/${slug}-${Date.now()}.${ext}`;
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const { error } = await supabase.storage.from(folder).upload(filePath, buffer, {
+    contentType: file.type,
+    upsert: true,
+  });
+
+  if (error) {
+    return null;
+  }
+
+  const { data } = supabase.storage.from(folder).getPublicUrl(filePath);
+  return data.publicUrl;
 }
 
 export async function loginAdmin(formData: FormData) {
-  const user = String(formData.get("username") ?? "").trim();
-  const pass = String(formData.get("password") ?? "").trim();
+  const user = readText(formData, "username");
+  const pass = readText(formData, "password");
 
-  if (verifyCredentials(user, pass)) {
-    const token = createAdminToken();
-    redirect(`${siteConfig.adminRoute}?token=${token}`);
+  if (!verifyCredentials(user, pass)) {
+    redirectTo(null, "loginFailed");
   }
 
-  redirect(siteConfig.adminRoute);
+  const token = createAdminToken();
+  redirect(getReturnUrl(token, "loginSuccess"));
 }
 
 export async function logoutAdmin() {
@@ -35,307 +122,331 @@ export async function logoutAdmin() {
 }
 
 export async function createCategory(formData: FormData) {
-  requireAdmin(formData);
+  const token = requireAdmin(formData);
   const supabase = getSupabaseAdmin();
 
-  const nameEn = String(formData.get("name_en") ?? "").trim();
-  const nameAr = String(formData.get("name_ar") ?? "").trim();
-  const slug = String(formData.get("slug") ?? "").trim();
-  const season = String(formData.get("season") ?? "").trim();
-  const sortOrderRaw = String(formData.get("sort_order") ?? "").trim();
-  const sortOrderValue = sortOrderRaw ? Number(sortOrderRaw) : NaN;
-  const sortOrder = Number.isFinite(sortOrderValue)
-    ? Math.max(0, sortOrderValue)
-    : null;
+  const nameEn = readText(formData, "name_en");
+  const nameAr = readText(formData, "name_ar");
+  const slugInput = readText(formData, "slug");
+  const season = readText(formData, "season");
+  const sortOrder = readNumber(formData.get("sort_order"), null);
 
-  if (!nameEn || !slug) {
-    return;
+  if (!nameEn || !nameAr) {
+    redirectTo(token, "missingData");
   }
 
-  await supabase.from("categories").insert({
+  const { error } = await supabase.from("categories").insert({
     name_en: nameEn,
     name_ar: nameAr,
-    slug,
+    slug: toSlug(slugInput || nameEn || nameAr),
     season: season || null,
-    sort_order: sortOrder,
+    sort_order: sortOrder !== null && sortOrder >= 0 ? sortOrder : null,
   });
+
+  if (error) {
+    redirectTo(token, "actionFailed");
+  }
 
   revalidatePath(siteConfig.adminRoute);
   revalidatePath("/");
+  revalidatePath("/products");
+  revalidatePath("/products/rolling");
+  redirectTo(token, "categoryCreated");
 }
 
 export async function deleteCategory(formData: FormData) {
-  requireAdmin(formData);
+  const token = requireAdmin(formData);
   const supabase = getSupabaseAdmin();
+  const id = readText(formData, "category_id");
 
-  const id = String(formData.get("category_id") ?? "").trim();
   if (!id) {
-    return;
+    redirectTo(token, "missingData");
   }
 
-  await supabase.from("categories").delete().eq("id", id);
+  const { error } = await supabase.from("categories").delete().eq("id", id);
+  if (error) {
+    redirectTo(token, "actionFailed");
+  }
+
   revalidatePath(siteConfig.adminRoute);
   revalidatePath("/");
+  revalidatePath("/products");
+  revalidatePath("/products/rolling");
+  redirectTo(token, "categoryDeleted");
 }
 
 export async function createProduct(formData: FormData) {
-  requireAdmin(formData);
+  const token = requireAdmin(formData);
   const supabase = getSupabaseAdmin();
 
-  const nameEn = String(formData.get("name_en") ?? "").trim();
-  const nameAr = String(formData.get("name_ar") ?? "").trim();
-  const slug = String(formData.get("slug") ?? "").trim();
-  const season = String(formData.get("season") ?? "").trim();
-  const descriptionEn = String(formData.get("description_en") ?? "").trim();
-  const descriptionAr = String(formData.get("description_ar") ?? "").trim();
-  const categoryId = String(formData.get("category_id") ?? "").trim();
-  const priceRaw = Number(formData.get("price") ?? 0);
-  const price = Number.isFinite(priceRaw) ? Math.max(priceRaw, 0) : 0;
-  const stockRaw = String(formData.get("stock_qty") ?? "").trim();
-  const stockValue = stockRaw ? Number(stockRaw) : NaN;
-  const stockQty = Number.isFinite(stockValue) ? Math.max(stockValue, 0) : null;
-  const minOrderRaw = String(formData.get("min_order_qty") ?? "").trim();
-  const minOrderValue = minOrderRaw ? Number(minOrderRaw) : NaN;
-  const minOrderQty = Number.isFinite(minOrderValue)
-    ? Math.max(minOrderValue, 1)
-    : 1;
-  const maxOrderRaw = String(formData.get("max_order_qty") ?? "").trim();
-  const maxOrderValue = maxOrderRaw ? Number(maxOrderRaw) : NaN;
-  const maxOrderQty = Number.isFinite(maxOrderValue)
-    ? Math.max(maxOrderValue, 1)
-    : null;
-  const multipleRaw = String(formData.get("order_multiple") ?? "").trim();
-  const multipleValue = multipleRaw ? Number(multipleRaw) : NaN;
-  const orderMultiple = Number.isFinite(multipleValue)
-    ? Math.max(multipleValue, 1)
-    : 1;
-  const bundleQtyRaw = String(formData.get("bundle_qty") ?? "").trim();
-  const bundleQtyValue = bundleQtyRaw ? Number(bundleQtyRaw) : NaN;
-  const bundleQty = Number.isFinite(bundleQtyValue) ? Math.max(bundleQtyValue, 0) : null;
-  const bundlePriceRaw = String(formData.get("bundle_price") ?? "").trim();
-  const bundlePriceValue = bundlePriceRaw ? Number(bundlePriceRaw) : NaN;
-  const bundlePrice = Number.isFinite(bundlePriceValue) ? Math.max(bundlePriceValue, 0) : null;
+  const nameEn = readText(formData, "name_en");
+  const nameAr = readText(formData, "name_ar");
+  const slugInput = readText(formData, "slug");
+  const season = readText(formData, "season");
+  const descriptionEn = readText(formData, "description_en");
+  const descriptionAr = readText(formData, "description_ar");
+  const categoryId = readText(formData, "category_id");
+  const price = readNumber(formData.get("price"), 0) ?? 0;
+  const stockQty = readNumber(formData.get("stock_qty"), null);
+  const minOrderQty = readNumber(formData.get("min_order_qty"), 1) ?? 1;
+  const maxOrderQty = readNumber(formData.get("max_order_qty"), null);
+  const orderMultiple = readNumber(formData.get("order_multiple"), 1) ?? 1;
+  const bundleQty = readNumber(formData.get("bundle_qty"), null);
+  const bundlePrice = readNumber(formData.get("bundle_price"), null);
   const image = formData.get("image") as File | null;
-  const isOnSaleRaw = String(formData.get("is_on_sale") ?? "").trim();
-  const is_on_sale = isOnSaleRaw === "true";
-  const salePriceRaw = String(formData.get("sale_price") ?? "").trim();
-  const sale_price = salePriceRaw ? Number(salePriceRaw) : null;
-  const salePercentRaw = String(formData.get("sale_percent") ?? "").trim();
-  const sale_percent = salePercentRaw ? Number(salePercentRaw) : null;
+  const isOnSale = readBoolean(formData, "is_on_sale");
+  const featured = readBoolean(formData, "featured");
+  const isActive = readBoolean(formData, "is_active", true);
+  const salePrice = readNumber(formData.get("sale_price"), null);
+  const salePercent = readNumber(formData.get("sale_percent"), null);
 
-  if (!nameEn || !slug || price <= 0) {
-    return;
+  if (!nameEn || !nameAr || price <= 0) {
+    redirectTo(token, "missingData");
   }
 
-  let imageUrl: string | null = null;
-  if (image && image.size > 0) {
-    const ext = image.name.split(".").pop() || "jpg";
-    const filePath = `products/${slug}-${Date.now()}.${ext}`;
-    const buffer = Buffer.from(await image.arrayBuffer());
+  const slug = toSlug(slugInput || nameEn || nameAr);
+  const imageUrl = await uploadImage(image, "products", slug);
 
-    const { error: uploadError } = await supabase.storage
-      .from("products")
-      .upload(filePath, buffer, {
-        contentType: image.type,
-        upsert: true,
-      });
-
-    if (!uploadError) {
-      const { data } = supabase.storage
-        .from("products")
-        .getPublicUrl(filePath);
-      imageUrl = data.publicUrl;
-    }
-  }
-
-  await supabase.from("products").insert({
+  const { error } = await supabase.from("products").insert({
     name_en: nameEn,
     name_ar: nameAr,
     slug,
-    description_en: descriptionEn,
-    description_ar: descriptionAr,
+    description_en: descriptionEn || null,
+    description_ar: descriptionAr || null,
     category_id: categoryId || null,
     price,
     image_url: imageUrl,
+    gallery_images: imageUrl ? [imageUrl] : [],
+    variants: [],
     season: season || null,
-    is_active: true,
-    is_on_sale: is_on_sale,
-    sale_price: sale_price,
-    sale_percent: sale_percent,
-    featured: false,
+    is_active: isActive,
+    is_on_sale: isOnSale,
+    sale_price: salePrice,
+    sale_percent: salePercent,
+    featured,
     stock_qty: stockQty,
     min_order_qty: minOrderQty,
-    max_order_qty:
-      maxOrderQty && maxOrderQty >= minOrderQty ? maxOrderQty : null,
+    max_order_qty: maxOrderQty && maxOrderQty >= minOrderQty ? maxOrderQty : null,
     order_multiple: orderMultiple,
     bundle_qty: bundleQty,
     bundle_price: bundlePrice,
   });
 
+  if (error) {
+    redirectTo(token, "actionFailed");
+  }
+
   revalidatePath(siteConfig.adminRoute);
   revalidatePath("/");
+  revalidatePath("/products");
+  revalidatePath("/products/rolling");
+  redirectTo(token, "productCreated");
 }
 
 export async function deleteProduct(formData: FormData) {
-  requireAdmin(formData);
+  const token = requireAdmin(formData);
   const supabase = getSupabaseAdmin();
+  const id = readText(formData, "product_id");
 
-  const id = String(formData.get("product_id") ?? "").trim();
   if (!id) {
-    return;
+    redirectTo(token, "missingData");
   }
 
-  await supabase.from("products").delete().eq("id", id);
+  const { error } = await supabase.from("products").delete().eq("id", id);
+  if (error) {
+    redirectTo(token, "actionFailed");
+  }
+
   revalidatePath(siteConfig.adminRoute);
   revalidatePath("/");
+  revalidatePath("/products");
+  revalidatePath("/products/rolling");
+  redirectTo(token, "productDeleted");
 }
 
 export async function createCoupon(formData: FormData) {
-  requireAdmin(formData);
+  const token = requireAdmin(formData);
   const supabase = getSupabaseAdmin();
 
-  const code = String(formData.get("code") ?? "").trim().toUpperCase();
-  const type = String(formData.get("type") ?? "percent").trim();
-  const valueRaw = String(formData.get("value") ?? "").trim();
-  const value = valueRaw ? Number(valueRaw) : NaN;
-  const minSubtotalRaw = String(formData.get("min_subtotal") ?? "").trim();
-  const min_subtotal = minSubtotalRaw ? Number(minSubtotalRaw) : null;
-  const maxUsesRaw = String(formData.get("max_uses") ?? "").trim();
-  const max_uses = maxUsesRaw ? Number(maxUsesRaw) : null;
-  const startsAtRaw = String(formData.get("starts_at") ?? "").trim();
-  const expiresAtRaw = String(formData.get("expires_at") ?? "").trim();
-  const starts_at = startsAtRaw ? new Date(startsAtRaw).toISOString() : null;
-  const expires_at = expiresAtRaw ? new Date(expiresAtRaw).toISOString() : null;
+  const code = readText(formData, "code").toUpperCase();
+  const type = readText(formData, "type") || "percent";
+  const value = readNumber(formData.get("value"), null);
+  const minSubtotal = readNumber(formData.get("min_subtotal"), null);
+  const maxUses = readNumber(formData.get("max_uses"), null);
+  const startsAtRaw = readText(formData, "starts_at");
+  const expiresAtRaw = readText(formData, "expires_at");
 
-  if (!code || !type || !Number.isFinite(value)) {
-    return;
+  if (!code || value === null) {
+    redirectTo(token, "missingData");
   }
 
-  await supabase.from("coupons").insert({
+  const { error } = await supabase.from("coupons").insert({
     code,
     type,
     value,
-    min_subtotal: min_subtotal ?? null,
-    max_uses: max_uses ?? null,
+    min_subtotal: minSubtotal,
+    max_uses: maxUses,
     used_count: 0,
-    starts_at: starts_at ?? null,
-    expires_at: expires_at ?? null,
+    starts_at: startsAtRaw ? new Date(startsAtRaw).toISOString() : null,
+    expires_at: expiresAtRaw ? new Date(expiresAtRaw).toISOString() : null,
     is_active: true,
   });
 
+  if (error) {
+    redirectTo(token, "actionFailed");
+  }
+
   revalidatePath(siteConfig.adminRoute);
+  redirectTo(token, "couponCreated");
 }
 
 export async function deleteCoupon(formData: FormData) {
-  requireAdmin(formData);
+  const token = requireAdmin(formData);
   const supabase = getSupabaseAdmin();
-  const id = String(formData.get("coupon_id") ?? "").trim();
-  if (!id) return;
-  await supabase.from("coupons").delete().eq("id", id);
+  const id = readText(formData, "coupon_id");
+
+  if (!id) {
+    redirectTo(token, "missingData");
+  }
+
+  const { error } = await supabase.from("coupons").delete().eq("id", id);
+  if (error) {
+    redirectTo(token, "actionFailed");
+  }
+
   revalidatePath(siteConfig.adminRoute);
+  redirectTo(token, "couponDeleted");
 }
 
 export async function updateCoupon(formData: FormData) {
-  requireAdmin(formData);
+  const token = requireAdmin(formData);
   const supabase = getSupabaseAdmin();
-  const id = String(formData.get("coupon_id") ?? "").trim();
-  if (!id) return;
+  const id = readText(formData, "coupon_id");
+
+  if (!id) {
+    redirectTo(token, "missingData");
+  }
 
   const updates: Record<string, unknown> = {};
-  const code = String(formData.get("code") ?? "").trim().toUpperCase();
+  const code = readText(formData, "code").toUpperCase();
+  const type = readText(formData, "type");
+  const value = readNumber(formData.get("value"), null);
+  const minSubtotal = readNumber(formData.get("min_subtotal"), null);
+  const maxUses = readNumber(formData.get("max_uses"), null);
+  const startsAtRaw = readText(formData, "starts_at");
+  const expiresAtRaw = readText(formData, "expires_at");
+
   if (code) updates.code = code;
-  const type = String(formData.get("type") ?? "").trim();
   if (type) updates.type = type;
-  const valueRaw = String(formData.get("value") ?? "").trim();
-  if (valueRaw) updates.value = Number(valueRaw);
-  const minSubtotalRaw = String(formData.get("min_subtotal") ?? "").trim();
-  if (minSubtotalRaw) updates.min_subtotal = Number(minSubtotalRaw);
-  const maxUsesRaw = String(formData.get("max_uses") ?? "").trim();
-  if (maxUsesRaw) updates.max_uses = Number(maxUsesRaw);
-  const startsAtRaw = String(formData.get("starts_at") ?? "").trim();
+  if (value !== null) updates.value = value;
+  if (minSubtotal !== null) updates.min_subtotal = minSubtotal;
+  if (maxUses !== null) updates.max_uses = maxUses;
   if (startsAtRaw) updates.starts_at = new Date(startsAtRaw).toISOString();
-  const expiresAtRaw = String(formData.get("expires_at") ?? "").trim();
   if (expiresAtRaw) updates.expires_at = new Date(expiresAtRaw).toISOString();
-  const isActiveRaw = String(formData.get("is_active") ?? "").trim();
-  if (isActiveRaw) updates.is_active = isActiveRaw === "true";
+  if (formData.has("is_active")) updates.is_active = readBoolean(formData, "is_active");
 
-  if (!Object.keys(updates).length) return;
+  if (!Object.keys(updates).length) {
+    redirectTo(token, "missingData");
+  }
 
-  await supabase.from("coupons").update(updates).eq("id", id);
+  const { error } = await supabase.from("coupons").update(updates).eq("id", id);
+  if (error) {
+    redirectTo(token, "actionFailed");
+  }
+
   revalidatePath(siteConfig.adminRoute);
+  redirectTo(token, "couponUpdated");
 }
 
 export async function toggleProductActive(formData: FormData) {
-  requireAdmin(formData);
+  const token = requireAdmin(formData);
   const supabase = getSupabaseAdmin();
 
-  const id = String(formData.get("product_id") ?? "").trim();
-  const nextState = String(formData.get("next_state") ?? "").trim();
+  const id = readText(formData, "product_id");
+  const nextState = readBoolean(formData, "next_state");
 
   if (!id) {
-    return;
+    redirectTo(token, "missingData");
   }
 
-  await supabase
-    .from("products")
-    .update({ is_active: nextState === "true" })
-    .eq("id", id);
+  const { error } = await supabase.from("products").update({ is_active: nextState }).eq("id", id);
+  if (error) {
+    redirectTo(token, "actionFailed");
+  }
 
   revalidatePath(siteConfig.adminRoute);
   revalidatePath("/");
+  revalidatePath("/products");
+  revalidatePath("/products/rolling");
+  redirectTo(token, "productToggled");
 }
 
 export async function updateProduct(formData: FormData) {
-  requireAdmin(formData);
+  const token = requireAdmin(formData);
   const supabase = getSupabaseAdmin();
-  const id = String(formData.get("product_id") ?? "").trim();
-  if (!id) return;
+  const id = readText(formData, "product_id");
+
+  if (!id) {
+    redirectTo(token, "missingData");
+  }
 
   const updates: Record<string, unknown> = {};
-  const stockRaw = String(formData.get("stock_qty") ?? "").trim();
-  if (stockRaw) updates.stock_qty = Number(stockRaw);
-  const isOnSaleRaw = String(formData.get("is_on_sale") ?? "").trim();
-  if (isOnSaleRaw) updates.is_on_sale = isOnSaleRaw === "true";
-  const salePriceRaw = String(formData.get("sale_price") ?? "").trim();
-  if (salePriceRaw) updates.sale_price = Number(salePriceRaw);
-  const salePercentRaw = String(formData.get("sale_percent") ?? "").trim();
-  if (salePercentRaw) updates.sale_percent = Number(salePercentRaw);
+  const stockQty = readNumber(formData.get("stock_qty"), null);
+  const salePrice = readNumber(formData.get("sale_price"), null);
+  const salePercent = readNumber(formData.get("sale_percent"), null);
+  const season = readText(formData, "season");
 
-  if (!Object.keys(updates).length) return;
+  if (stockQty !== null) updates.stock_qty = stockQty;
+  if (salePrice !== null) updates.sale_price = salePrice;
+  if (salePercent !== null) updates.sale_percent = salePercent;
+  if (season) updates.season = season;
+  if (formData.has("is_on_sale")) updates.is_on_sale = readBoolean(formData, "is_on_sale");
+  if (formData.has("featured")) updates.featured = readBoolean(formData, "featured");
+  if (formData.has("is_active")) updates.is_active = readBoolean(formData, "is_active", true);
 
-  await supabase.from("products").update(updates).eq("id", id);
+  if (!Object.keys(updates).length) {
+    redirectTo(token, "missingData");
+  }
+
+  const { error } = await supabase.from("products").update(updates).eq("id", id);
+  if (error) {
+    redirectTo(token, "actionFailed");
+  }
+
   revalidatePath(siteConfig.adminRoute);
   revalidatePath("/");
+  revalidatePath("/products");
+  revalidatePath("/products/rolling");
+  redirectTo(token, "productUpdated");
 }
 
 export async function updateOrderStatus(formData: FormData) {
-  requireAdmin(formData);
+  const token = requireAdmin(formData);
   const supabase = getSupabaseAdmin();
 
-  const id = String(formData.get("order_id") ?? "").trim();
-  const status = String(formData.get("status") ?? "").trim();
-  const paymentStatus = String(formData.get("payment_status") ?? "").trim();
-  const shippingState = String(formData.get("shipping_state") ?? "").trim();
+  const id = readText(formData, "order_id");
+  const status = readText(formData, "status");
+  const paymentStatus = readText(formData, "payment_status");
+  const shippingState = readText(formData, "shipping_state");
 
   if (!id) {
-    return;
+    redirectTo(token, "missingData");
   }
 
   const updates: Record<string, string> = {};
-  if (status) {
-    updates.status = status;
-  }
-  if (paymentStatus) {
-    updates.payment_status = paymentStatus;
-  }
-  if (shippingState) {
-    updates.shipping_state = shippingState;
-  }
+  if (status) updates.status = status;
+  if (paymentStatus) updates.payment_status = paymentStatus;
+  if (shippingState) updates.shipping_state = shippingState;
 
   if (!Object.keys(updates).length) {
-    return;
+    redirectTo(token, "missingData");
   }
 
-  await supabase.from("orders").update(updates).eq("id", id);
+  const { error } = await supabase.from("orders").update(updates).eq("id", id);
+  if (error) {
+    redirectTo(token, "actionFailed");
+  }
+
   revalidatePath(siteConfig.adminRoute);
+  redirectTo(token, "orderUpdated");
 }

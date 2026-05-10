@@ -5,13 +5,17 @@ import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { createBostaDelivery } from "@/lib/bosta";
 import { calculateLineTotal } from "@/lib/cart";
+import { getVariantPrice } from "@/lib/product-display";
 import { siteConfig } from "@/lib/site-config";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import type { CartCoupon, CartItem } from "@/lib/types";
+import type { CartCoupon, CartItem, ProductVariant } from "@/lib/types";
 
 type SubmittedItem = {
   id: string;
   quantity: number;
+  cart_key?: string;
+  unit_price?: number;
+  variant?: ProductVariant | null;
 };
 
 function parseSubmittedItems(raw: string): SubmittedItem[] {
@@ -31,10 +35,19 @@ function parseSubmittedItems(raw: string): SubmittedItem[] {
     }
     const id = String((entry as { id?: unknown }).id ?? "").trim();
     const quantity = Number((entry as { quantity?: unknown }).quantity ?? 0);
+    const cart_key = String((entry as { cart_key?: unknown }).cart_key ?? "").trim();
+    const unit_price = Number((entry as { unit_price?: unknown }).unit_price ?? NaN);
+    const variant = parseVariant((entry as { variant?: unknown }).variant ?? null);
     if (!id || !Number.isFinite(quantity) || quantity <= 0) {
       continue;
     }
-    items.push({ id, quantity: Math.floor(quantity) });
+    items.push({
+      id,
+      quantity: Math.floor(quantity),
+      cart_key: cart_key || undefined,
+      unit_price: Number.isFinite(unit_price) ? unit_price : undefined,
+      variant,
+    });
   }
 
   return items;
@@ -60,6 +73,33 @@ function normalizeQuantity(item: CartItem, nextQty: number) {
   }
 
   return quantity;
+}
+
+function parseVariant(input: unknown): ProductVariant | null {
+  if (!input || typeof input !== "object" || Array.isArray(input)) {
+    return null;
+  }
+
+  const variant = input as Record<string, unknown>;
+  const textValue = (value: unknown) => (typeof value === "string" && value.trim() ? value.trim() : null);
+  const numberValue = (value: unknown) => {
+    const parsed = typeof value === "number" ? value : Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  };
+
+  return {
+    id: textValue(variant.id),
+    color: textValue(variant.color),
+    size: textValue(variant.size),
+    label_en: textValue(variant.label_en),
+    label_ar: textValue(variant.label_ar),
+    price: numberValue(variant.price),
+    sale_price: numberValue(variant.sale_price),
+    sale_percent: numberValue(variant.sale_percent),
+    image_url: textValue(variant.image_url),
+    stock_qty: numberValue(variant.stock_qty),
+    sku: textValue(variant.sku),
+  };
 }
 
 async function resolveCoupon(
@@ -160,7 +200,7 @@ export async function createOrder(formData: FormData) {
   const productIds = Array.from(new Set(inputItems.map((item) => item.id)));
   const { data: dbProducts, error: productsError } = await supabase
     .from("products")
-    .select("id, slug, name_en, name_ar, price, image_url, stock_qty, min_order_qty, max_order_qty, order_multiple, bundle_qty, bundle_price")
+    .select("*")
     .in("id", productIds);
 
   if (productsError) {
@@ -176,15 +216,31 @@ export async function createOrder(formData: FormData) {
       return { success: false, error: "A product in your order no longer exists." };
     }
 
+    const selectedVariant = entry.variant ?? null;
+    const selectedPrice =
+      typeof entry.unit_price === "number" && Number.isFinite(entry.unit_price)
+        ? entry.unit_price
+        : getVariantPrice(dbProduct as never, selectedVariant as never);
+
     const item: CartItem = {
       id: dbProduct.id,
+      cart_key: entry.cart_key || dbProduct.id,
       slug: dbProduct.slug,
       name_en: dbProduct.name_en,
       name_ar: dbProduct.name_ar,
-      price: Number(dbProduct.price ?? 0),
-      image_url: dbProduct.image_url,
+      price: selectedPrice,
+      image_url: selectedVariant?.image_url ?? dbProduct.image_url,
+      variant: selectedVariant,
+      variant_label: selectedVariant?.color || selectedVariant?.size ? [selectedVariant.color, selectedVariant.size].filter(Boolean).join(" / ") : null,
+      variant_color: selectedVariant?.color ?? null,
+      variant_size: selectedVariant?.size ?? null,
+      variant_image_url: selectedVariant?.image_url ?? null,
+      variant_price: selectedVariant?.price ?? null,
+      variant_sale_price: selectedVariant?.sale_price ?? null,
+      variant_sale_percent: selectedVariant?.sale_percent ?? null,
+      variant_sku: selectedVariant?.sku ?? null,
       quantity: entry.quantity,
-      stock_qty: dbProduct.stock_qty,
+      stock_qty: selectedVariant?.stock_qty ?? dbProduct.stock_qty,
       min_order_qty: dbProduct.min_order_qty,
       max_order_qty: dbProduct.max_order_qty,
       order_multiple: dbProduct.order_multiple,
@@ -244,18 +300,19 @@ export async function createOrder(formData: FormData) {
 
   const orderItems = lineBreakdown.map(({ item, line }) => ({
     product_id: item.id,
+    cart_key: item.cart_key,
     name_en: item.name_en,
     name_ar: item.name_ar,
     quantity: item.quantity,
     unit_price: item.price,
     line_total: line.total,
+    variant: item.variant ?? null,
+    image_url: item.variant_image_url ?? item.image_url,
   }));
 
-  // If a coupon is being applied, try to reserve/increment its usage atomically before creating the order
   if (coupon?.code) {
     try {
       if (typeof coupon.max_uses === "number") {
-        // only increment if used_count < max_uses
         const { data: updated, error: updateError } = await supabase
           .from("coupons")
           .update({ used_count: (coupon.used_count ?? 0) + 1 })
@@ -313,15 +370,11 @@ export async function createOrder(formData: FormData) {
     }
   }
 
-  // coupon usage already reserved above before inserting the order
-
   const itemsCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
   const itemsDescription = cartItems
     .map((item) => `${item.name_en} x${item.quantity}`)
     .join(", ");
 
-  // For wallet payments, wait for admin verification before creating delivery
-  // For COD, create delivery immediately
   if (paymentMethod === "cod") {
     const codAmount = total;
     const bostaDelivery = await createBostaDelivery({

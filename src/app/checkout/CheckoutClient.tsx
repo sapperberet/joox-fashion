@@ -76,6 +76,7 @@ export default function CheckoutClient({ product }: CheckoutClientProps) {
     : product
       ? calculateLineTotal({
           id: product.id,
+          cart_key: product.id,
           slug: product.slug,
           name_en: product.name_en,
           name_ar: product.name_ar,
@@ -117,7 +118,15 @@ export default function CheckoutClient({ product }: CheckoutClientProps) {
       if (useCartMode) {
         formData.append(
           "cart_items_json",
-          JSON.stringify(items.map((item) => ({ id: item.id, quantity: item.quantity }))),
+          JSON.stringify(
+            items.map((item) => ({
+              id: item.id,
+              cart_key: item.cart_key,
+              quantity: item.quantity,
+              unit_price: item.price,
+              variant: item.variant,
+            })),
+          ),
         );
         if (coupon) {
           formData.append("coupon_code", coupon.code);
@@ -148,7 +157,6 @@ export default function CheckoutClient({ product }: CheckoutClientProps) {
     <div className="relative">
       <SiteHeader />
       <main className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-8 sm:gap-10 sm:px-6 sm:py-16 lg:grid lg:grid-cols-[1fr_1fr] lg:gap-8">
-        {/* Left Column: Form */}
         <form
           action={handleSubmit}
           className="flex flex-col gap-4 rounded-3xl border border-gold/20 bg-stone/80 p-4 sm:gap-6 sm:p-8 temple-panel"
@@ -337,7 +345,7 @@ export default function CheckoutClient({ product }: CheckoutClientProps) {
               </div>
 
               {receiptFileName && (
-                <div className="rounded-2xl border-2 border-gold/40 bg-gradient-to-br from-gold/10 to-gold/5 p-4">
+                <div className="rounded-2xl border-2 border-gold/40 bg-linear-to-br from-gold/10 to-gold/5 p-4">
                   <div className="flex items-start gap-3 mb-4">
                     <div className="text-3xl leading-none text-emerald">✓</div>
                     <div className="flex-1">
@@ -370,7 +378,7 @@ export default function CheckoutClient({ product }: CheckoutClientProps) {
                   href={INSTAPAY_LINK}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block w-full rounded-xl bg-gradient-to-r from-gold/80 to-gold px-4 py-3 text-center font-semibold text-ink uppercase tracking-[0.2em] text-sm hover:from-gold to-gold/90 transition"
+                  className="block w-full rounded-xl bg-linear-to-r from-gold/80 to-gold/90 px-4 py-3 text-center font-semibold text-ink uppercase tracking-[0.2em] text-sm hover:from-gold hover:to-gold transition"
                 >
                   🔗 {t.checkout.instapayButton}
                 </a>
@@ -416,7 +424,7 @@ export default function CheckoutClient({ product }: CheckoutClientProps) {
               </div>
 
               {receiptFileName && (
-                <div className="rounded-2xl border-2 border-gold/40 bg-gradient-to-br from-gold/10 to-gold/5 p-4">
+                <div className="rounded-2xl border-2 border-gold/40 bg-linear-to-br from-gold/10 to-gold/5 p-4">
                   <div className="flex items-start gap-3 mb-4">
                     <div className="text-3xl leading-none text-emerald">✓</div>
                     <div className="flex-1">
@@ -446,7 +454,6 @@ export default function CheckoutClient({ product }: CheckoutClientProps) {
           </button>
         </form>
 
-        {/* Right Column: Cart Summary */}
         <div className="flex flex-col gap-4">
           <div className="sticky top-24 rounded-3xl border border-gold/20 bg-stone/80 p-6 sm:p-8 space-y-4 temple-panel">
             <div className="text-sm uppercase tracking-[0.3em] text-gold font-semibold flex items-center gap-2">
@@ -458,29 +465,37 @@ export default function CheckoutClient({ product }: CheckoutClientProps) {
                 <div className="max-h-64 overflow-y-auto space-y-3 border-b border-gold/10 pb-4">
                   {items.map((item) => {
                     const lineTotal = calculateLineTotal(item);
+                    const cartKey = item.cart_key ?? item.id;
                     return (
-                      <div key={item.id} className="rounded-lg border border-gold/10 bg-obsidian/50 p-3">
+                      <div key={cartKey} className="rounded-lg border border-gold/10 bg-obsidian/50 p-3">
                         <div className="flex gap-3">
-                          <div className="relative h-16 w-16 flex-shrink-0 rounded-lg overflow-hidden bg-obsidian border border-gold/10">
-                            <Image
-                              src={item.image_url}
-                              alt={locale === "ar" ? item.name_ar : item.name_en}
-                              fill
-                              className="object-cover"
-                              unoptimized
-                            />
+                          <div className="relative h-16 w-16 shrink-0 rounded-lg overflow-hidden bg-obsidian border border-gold/10">
+                            {item.image_url ? (
+                              <Image
+                                src={item.image_url}
+                                alt={locale === "ar" ? item.name_ar : item.name_en}
+                                fill
+                                className="object-cover"
+                                unoptimized
+                              />
+                            ) : null}
                           </div>
                           <div className="flex-1 min-w-0">
                             <h4 className="text-xs font-semibold text-sand truncate">
                               {locale === "ar" ? item.name_ar : item.name_en}
                             </h4>
+                            {item.variant_label && (
+                              <p className="mt-1 text-[0.65rem] uppercase tracking-[0.2em] text-gold/70 truncate">
+                                {item.variant_label}
+                              </p>
+                            )}
                             <div className="mt-2 flex items-center justify-between gap-2">
                               <div className="flex items-center gap-1">
                                 <button
                                   type="button"
                                   onClick={() => {
                                     if (item.quantity > 1) {
-                                      updateQuantity(item.id, item.quantity - 1);
+                                      updateQuantity(cartKey, item.quantity - 1);
                                     }
                                   }}
                                   className="h-5 w-5 rounded border border-gold/20 bg-obsidian text-xs text-gold hover:border-gold/50 transition"
@@ -495,7 +510,7 @@ export default function CheckoutClient({ product }: CheckoutClientProps) {
                                   onClick={() => {
                                     const max = item.stock_qty ?? null;
                                     if (max === null || item.quantity < max) {
-                                      updateQuantity(item.id, item.quantity + 1);
+                                      updateQuantity(cartKey, item.quantity + 1);
                                     }
                                   }}
                                   className="h-5 w-5 rounded border border-gold/20 bg-obsidian text-xs text-gold hover:border-gold/50 transition"
@@ -506,7 +521,7 @@ export default function CheckoutClient({ product }: CheckoutClientProps) {
                               <button
                                 type="button"
                                 onClick={() => {
-                                  removeItem(item.id);
+                                  removeItem(cartKey);
                                 }}
                                 className="text-xs text-red-400 hover:text-red-300 transition font-semibold"
                               >
@@ -543,7 +558,7 @@ export default function CheckoutClient({ product }: CheckoutClientProps) {
                   )}
                 </div>
 
-                <div className="rounded-lg bg-gradient-to-r from-gold/10 to-gold/5 border border-gold/20 p-3">
+                <div className="rounded-lg bg-linear-to-r from-gold/10 to-gold/5 border border-gold/20 p-3">
                   <div className="flex justify-between items-center">
                     <span className="font-semibold text-sand">Total</span>
                     <span className="text-xl font-bold text-gold">{formatCurrency(total, locale)}</span>
@@ -558,13 +573,15 @@ export default function CheckoutClient({ product }: CheckoutClientProps) {
               <>
                 <div className="rounded-lg border border-gold/20 bg-obsidian/50 p-4 space-y-4">
                   <div className="relative h-40 rounded-lg overflow-hidden bg-obsidian border border-gold/10">
-                    <Image
-                      src={product.image_url}
-                      alt={locale === "ar" ? product.name_ar : product.name_en}
-                      fill
-                      className="object-cover"
-                      unoptimized
-                    />
+                    {product.image_url ? (
+                      <Image
+                        src={product.image_url}
+                        alt={locale === "ar" ? product.name_ar : product.name_en}
+                        fill
+                        className="object-cover"
+                        unoptimized
+                      />
+                    ) : null}
                   </div>
                   <div>
                     <h3 className="font-semibold text-sand text-sm">{locale === "ar" ? product.name_ar : product.name_en}</h3>
@@ -583,7 +600,7 @@ export default function CheckoutClient({ product }: CheckoutClientProps) {
                   </div>
                 </div>
 
-                <div className="rounded-lg bg-gradient-to-r from-gold/10 to-gold/5 border border-gold/20 p-3">
+                <div className="rounded-lg bg-linear-to-r from-gold/10 to-gold/5 border border-gold/20 p-3">
                   <div className="flex justify-between items-center">
                     <span className="font-semibold text-sand">Total</span>
                     <span className="text-xl font-bold text-gold">{formatCurrency(subtotal, locale)}</span>

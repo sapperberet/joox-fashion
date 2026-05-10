@@ -18,9 +18,7 @@ async function getHomeData(): Promise<{
       .order("sort_order", { ascending: true }),
     supabase
       .from("products")
-      .select(
-        "id, category_id, name_en, name_ar, slug, description_en, description_ar, price, image_url, is_active, featured, season, is_on_sale, sale_price, sale_percent, stock_qty",
-      )
+      .select("*")
       .eq("is_active", true)
       .order("created_at", { ascending: false })
       .limit(12),

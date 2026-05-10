@@ -85,7 +85,7 @@ export default function ThankYouClient({ orderId }: ThankYouClientProps) {
     <div className="relative">
       <SiteHeader />
       <main className="mx-auto flex max-w-6xl flex-col gap-8 px-4 sm:px-6 py-8 sm:py-20">
-        <div className="rounded-3xl border-2 border-gold/20 bg-gradient-to-br from-stone/90 to-stone/80 p-6 sm:p-10 space-y-6 sm:space-y-8 temple-panel">
+        <div style={{ background: "linear-gradient(135deg, rgba(28,24,20,0.92), rgba(12,10,8,0.95))" }} className="rounded-3xl border-2 border-gold/20 p-6 sm:p-10 space-y-6 sm:space-y-8 temple-panel">
           <div className="text-center">
             <div className="mb-4 flex justify-center">
               <div className="inline-flex items-center justify-center h-16 w-16 rounded-full bg-emerald/20 border-2 border-emerald">
@@ -104,7 +104,7 @@ export default function ThankYouClient({ orderId }: ThankYouClientProps) {
           </div>
 
           {orderId && (
-            <div className="rounded-2xl border-2 border-gold/40 bg-gradient-to-r from-gold/10 to-gold/5 p-4 sm:p-6">
+            <div style={{ background: "linear-gradient(90deg, rgba(12,10,8,0.85), rgba(28,24,20,0.75))" }} className="rounded-2xl border-2 border-gold/40 p-4 sm:p-6">
               <div className="text-center">
                 <p className="text-xs uppercase tracking-[0.4em] text-gold/70 font-semibold">
                   📋 Order Reference
@@ -126,7 +126,7 @@ export default function ThankYouClient({ orderId }: ThankYouClientProps) {
           ) : order ? (
             <>
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                <div className="rounded-2xl border border-gold/20 bg-obsidian/60 p-4 sm:p-6 space-y-3">
+                <div style={{ background: "linear-gradient(90deg, rgba(12,10,8,0.72), rgba(28,24,20,0.55))" }} className="rounded-2xl border border-gold/20 p-4 sm:p-6 space-y-3">
                   <h3 className="text-sm uppercase tracking-[0.3em] text-gold font-semibold flex items-center gap-2">
                     <span>👤</span> Customer Info
                   </h3>
@@ -151,7 +151,7 @@ export default function ThankYouClient({ orderId }: ThankYouClientProps) {
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-gold/20 bg-obsidian/60 p-4 sm:p-6 space-y-3">
+                <div style={{ background: "linear-gradient(90deg, rgba(12,10,8,0.72), rgba(28,24,20,0.55))" }} className="rounded-2xl border border-gold/20 p-4 sm:p-6 space-y-3">
                   <h3 className="text-sm uppercase tracking-[0.3em] text-gold font-semibold flex items-center gap-2">
                     <span>💰</span> Order Summary
                   </h3>
@@ -179,7 +179,7 @@ export default function ThankYouClient({ orderId }: ThankYouClientProps) {
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-gold/20 bg-obsidian/60 p-4 sm:p-6 space-y-3">
+                <div style={{ background: "linear-gradient(135deg, rgba(12,10,8,0.72), rgba(28,24,20,0.55))" }} className="rounded-2xl border border-gold/20 p-4 sm:p-6 space-y-3">
                   <h3 className="text-sm uppercase tracking-[0.3em] text-gold font-semibold flex items-center gap-2">
                     <span>📊</span> Status
                   </h3>
@@ -204,7 +204,7 @@ export default function ThankYouClient({ orderId }: ThankYouClientProps) {
               </div>
 
               {order.shipping_tracking_number && (
-                <div className="rounded-2xl border-2 border-gold/30 bg-gradient-to-r from-gold/10 to-gold/5 p-4 sm:p-6">
+                <div style={{ background: "linear-gradient(90deg, rgba(12,10,8,0.85), rgba(28,24,20,0.75))" }} className="rounded-2xl border-2 border-gold/30 p-4 sm:p-6">
                   <div className="text-sm text-sand/60 mb-2">🚚 Tracking Number</div>
                   <div className="font-mono text-lg font-bold text-gold break-all">
                     {order.shipping_tracking_number}
@@ -218,7 +218,7 @@ export default function ThankYouClient({ orderId }: ThankYouClientProps) {
               )}
 
               {order.receipt_url && (
-                <div className="rounded-2xl border-2 border-gold/30 bg-gradient-to-br from-gold/5 to-gold/10 p-4 sm:p-6">
+                <div style={{ background: "linear-gradient(135deg, rgba(12,10,8,0.85), rgba(28,24,20,0.75))" }} className="rounded-2xl border-2 border-gold/30 p-4 sm:p-6">
                   <h3 className="text-sm uppercase tracking-[0.3em] text-gold font-semibold mb-4 flex items-center gap-2">
                     <span>📸</span> Payment Receipt
                   </h3>

@@ -4,6 +4,7 @@ import { copy } from "@/lib/i18n";
 import { formatCurrency } from "@/lib/format";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import type { Category, Order, Product } from "@/lib/types";
+import LanguageToggle from "@/components/LanguageToggle";
 import {
   createCategory,
   createProduct,
@@ -63,7 +64,11 @@ async function getAdminData(): Promise<{
 }
 
 type AdminPageProps = {
-  searchParams?: { token?: string };
+  searchParams?: {
+    token?: string;
+    flash?: string;
+    kind?: "success" | "error" | "info";
+  };
 };
 
 export default async function AdminPage({ searchParams }: AdminPageProps) {
@@ -71,6 +76,11 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   const isAuthorized = verifyAdminToken(token);
   const envReady =
     process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const flashMessages = copy.en.admin.flash;
+  const flashMessage = searchParams?.flash
+    ? flashMessages[searchParams.flash as keyof typeof flashMessages] ?? searchParams.flash
+    : "";
+  const flashKind = searchParams?.kind ?? "info";
 
   const statusOptions = [
     { value: "new", label: labels.statusNew },
@@ -103,9 +113,17 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
           action={loginAdmin}
           className="flex w-full flex-col gap-4 rounded-3xl border border-gold/20 bg-stone/80 p-8"
         >
-          <h1 className="font-display text-2xl tracking-[0.2em] text-gold">
-            {labels.loginTitle}
-          </h1>
+          <div className="flex items-start justify-between gap-4">
+            <h1 className="font-display text-2xl tracking-[0.2em] text-gold">
+              {labels.loginTitle}
+            </h1>
+            <LanguageToggle />
+          </div>
+          {flashMessage ? (
+            <div className={`rounded-2xl border px-4 py-3 text-sm ${flashKind === "error" ? "border-red-500/30 bg-red-950/60 text-red-100" : "border-emerald-500/30 bg-emerald-950/50 text-emerald-100"}`}>
+              {flashMessage}
+            </div>
+          ) : null}
           <input
             name="username"
             placeholder={labels.username}
@@ -151,16 +169,27 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
 
   return (
     <main className="mx-auto flex max-w-6xl flex-col gap-12 px-6 py-16">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="font-display text-3xl tracking-[0.2em] text-gold">
-          {labels.title}
-        </h1>
-        <form action={logoutAdmin}>
-          <button className="rounded-full border border-gold/40 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-gold">
-            {labels.signOut}
-          </button>
-        </form>
+      <div className="flex flex-wrap items-start justify-between gap-4 rounded-3xl border border-gold/20 bg-stone/80 p-6 temple-panel">
+        <div>
+          <h1 className="font-display text-3xl tracking-[0.2em] text-gold">
+            {labels.title}
+          </h1>
+          <p className="mt-2 text-sm text-sand/70">{labels.subtitle}</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <LanguageToggle />
+          <form action={logoutAdmin}>
+            <button className="rounded-full border border-gold/40 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-gold">
+              {labels.signOut}
+            </button>
+          </form>
+        </div>
       </div>
+      {flashMessage ? (
+        <div className={`rounded-3xl border px-5 py-4 text-sm ${flashKind === "error" ? "border-red-500/30 bg-red-950/60 text-red-100" : "border-emerald-500/30 bg-emerald-950/50 text-emerald-100"}`}>
+          {flashMessage}
+        </div>
+      ) : null}
 
       <section className="grid gap-6 lg:grid-cols-2">
         <form
@@ -179,11 +208,6 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
           <input
             name="name_ar"
             placeholder={labels.nameAr}
-            className="rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-sm text-sand"
-          />
-          <input
-            name="slug"
-            placeholder={labels.slug}
             className="rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-sm text-sand"
           />
           <select
@@ -208,6 +232,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
 
         <form
           action={createProduct}
+          encType="multipart/form-data"
           className="flex flex-col gap-4 rounded-3xl border border-gold/20 bg-stone/80 p-6"
         >
           <input type="hidden" name="admin_token" value={token} />
@@ -224,11 +249,6 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
             placeholder={labels.nameAr}
             className="rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-sm text-sand"
           />
-          <input
-            name="slug"
-            placeholder={labels.slug}
-            className="rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-sm text-sand"
-          />
           <select
             name="season"
             className="rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-sm text-sand"
@@ -241,7 +261,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
             name="category_id"
             className="rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-sm text-sand"
           >
-            <option value="">{labels.categories}</option>
+            <option value="">Collections (optional)</option>
             {categories.map((category) => (
               <option key={category.id} value={category.id}>
                 {category.name_en}
@@ -310,8 +330,18 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
           </div>
           <div className="grid gap-2 sm:grid-cols-3">
             <label className="flex items-center gap-2">
+              <input type="hidden" name="is_on_sale" value="false" />
               <input type="checkbox" name="is_on_sale" value="true" className="h-4 w-4" />
               <span className="text-xs text-sand/60">Sale</span>
+            </label>
+            <label className="flex items-center gap-2">
+              <input type="hidden" name="featured" value="false" />
+              <input type="checkbox" name="featured" value="true" className="h-4 w-4" />
+              <span className="text-xs text-sand/60">Featured</span>
+            </label>
+            <label className="flex items-center gap-2">
+              <input type="checkbox" name="is_active" value="true" defaultChecked className="h-4 w-4" />
+              <span className="text-xs text-sand/60">Active</span>
             </label>
             <input name="sale_price" type="number" min={0} step="0.01" placeholder="Sale price (EGP)" className="rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-sm text-sand" />
             <input name="sale_percent" type="number" min={0} max={100} step="1" placeholder="Sale % off" className="rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-sm text-sand" />
@@ -412,9 +442,20 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                       <input type="hidden" name="admin_token" value={token} />
                       <input type="hidden" name="product_id" value={product.id} />
                       <input name="stock_qty" defaultValue={product.stock_qty ?? ''} type="number" className="w-20 rounded-2xl border border-gold/20 bg-obsidian px-2 py-1 text-xs text-sand" />
+                      <select name="season" defaultValue={product.season ?? ""} className="w-24 rounded-2xl border border-gold/20 bg-obsidian px-2 py-1 text-xs text-sand">
+                        <option value="">Event</option>
+                        <option value="summer">Summer</option>
+                        <option value="winter">Winter</option>
+                      </select>
                       <label className="flex items-center gap-1 text-xs">
+                        <input type="hidden" name="is_on_sale" value="false" />
                         <input type="checkbox" name="is_on_sale" value="true" defaultChecked={!!product.is_on_sale} />
                         <span>Sale</span>
+                      </label>
+                      <label className="flex items-center gap-1 text-xs">
+                        <input type="hidden" name="featured" value="false" />
+                        <input type="checkbox" name="featured" value="true" defaultChecked={!!product.featured} />
+                        <span>Featured</span>
                       </label>
                       <input name="sale_price" defaultValue={product.sale_price ?? ''} type="number" step="0.01" placeholder="Sale" className="w-24 rounded-2xl border border-gold/20 bg-obsidian px-2 py-1 text-xs text-sand" />
                       <input name="sale_percent" defaultValue={product.sale_percent ?? ''} type="number" step="1" placeholder="%" className="w-16 rounded-2xl border border-gold/20 bg-obsidian px-2 py-1 text-xs text-sand" />
@@ -475,7 +516,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
 
       <section className="rounded-3xl border border-gold/20 bg-stone/80 p-6">
         <h2 className="font-display text-xl tracking-[0.2em] text-gold">
-          {labels.categories}
+          Collections
         </h2>
         <div className="mt-4 space-y-3">
           {categories.map((category) => (
@@ -485,7 +526,6 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
             >
               <div>
                 <span>{category.name_en}</span>
-                <span className="ml-2 text-xs text-sand/60">{category.slug}</span>
               </div>
               <form action={deleteCategory}>
                 <input type="hidden" name="admin_token" value={token} />
@@ -507,7 +547,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
           {orders.map((order) => (
             <div
               key={order.id}
-              className="rounded-2xl border-2 border-gold/20 bg-gradient-to-br from-obsidian/80 to-obsidian/60 overflow-hidden hover:border-gold/40 transition"
+              className="rounded-2xl border-2 border-gold/20 bg-obsidian/80 overflow-hidden hover:border-gold/40 transition"
             >
               <div className="grid gap-4 lg:grid-cols-3 p-4 sm:p-6">
                 <div className="lg:col-span-1 space-y-3">

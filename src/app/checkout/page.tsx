@@ -6,8 +6,8 @@ type CheckoutPageProps = {
   searchParams?: { product?: string };
 };
 
-async function getProduct(slug?: string): Promise<Product | null> {
-  if (!slug) {
+async function getProduct(identifier?: string): Promise<Product | null> {
+  if (!identifier) {
     return null;
   }
 
@@ -16,12 +16,20 @@ async function getProduct(slug?: string): Promise<Product | null> {
     return null;
   }
 
+  const byId = await supabase
+    .from("products")
+    .select("*")
+    .eq("id", identifier)
+    .maybeSingle();
+
+  if (byId.data) {
+    return byId.data;
+  }
+
   const { data } = await supabase
     .from("products")
-    .select(
-      "id, category_id, name_en, name_ar, slug, description_en, description_ar, price, image_url, is_active, featured, season, stock_qty, min_order_qty, max_order_qty, order_multiple, bundle_qty, bundle_price",
-    )
-    .eq("slug", slug)
+    .select("*")
+    .eq("slug", identifier)
     .maybeSingle();
 
   return data ?? null;

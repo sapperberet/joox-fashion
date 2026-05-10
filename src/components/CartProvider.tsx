@@ -9,13 +9,20 @@ import {
 } from "react";
 import type { CartCoupon, CartItem, Product } from "@/lib/types";
 import { normalizeCartQuantity } from "@/lib/cart";
+import {
+  buildVariantSelectionKey,
+  getDefaultVariant,
+  getVariantLabel,
+  getVariantPrice,
+  type ProductVariantSelection,
+} from "@/lib/product-display";
 
 type CartContextValue = {
   items: CartItem[];
   coupon: CartCoupon | null;
-  addItem: (product: Product, quantity?: number) => void;
-  updateQuantity: (id: string, quantity: number) => void;
-  removeItem: (id: string) => void;
+  addItem: (product: Product, quantity?: number, variant?: ProductVariantSelection | null) => void;
+  updateQuantity: (cartKey: string, quantity: number) => void;
+  removeItem: (cartKey: string) => void;
   clearCart: () => void;
   setCoupon: (coupon: CartCoupon | null) => void;
 };
@@ -51,18 +58,38 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
   }, [items, coupon]);
 
-  const addItem = (product: Product, quantity = 1) => {
+  const addItem = (product: Product, quantity = 1, variant: ProductVariantSelection | null = null) => {
+    const selectedVariant = variant ?? getDefaultVariant(product);
+    const stock = selectedVariant?.stock_qty ?? product.stock_qty ?? null;
+    if (stock !== null && stock <= 0) {
+      return;
+    }
+    const resolvedPrice = getVariantPrice(product, selectedVariant);
+    const resolvedImage = selectedVariant?.image_url ?? product.image_url;
+    const resolvedLabel = getVariantLabel(selectedVariant, "en");
+    const cartKey = buildVariantSelectionKey(product.id, selectedVariant);
+
     setItems((prev) => {
-      const existing = prev.find((item) => item.id === product.id);
+      const existing = prev.find((item) => (item.cart_key ?? item.id) === cartKey);
       const baseItem: CartItem = {
         id: product.id,
+        cart_key: cartKey,
         slug: product.slug,
         name_en: product.name_en,
         name_ar: product.name_ar,
-        price: product.price,
-        image_url: product.image_url,
+        price: resolvedPrice,
+        image_url: resolvedImage,
+        variant: selectedVariant ?? null,
+        variant_label: resolvedLabel || null,
+        variant_color: selectedVariant?.color ?? null,
+        variant_size: selectedVariant?.size ?? null,
+        variant_image_url: selectedVariant?.image_url ?? null,
+        variant_price: selectedVariant?.price ?? null,
+        variant_sale_price: selectedVariant?.sale_price ?? null,
+        variant_sale_percent: selectedVariant?.sale_percent ?? null,
+        variant_sku: selectedVariant?.sku ?? null,
         quantity: 1,
-        stock_qty: product.stock_qty ?? null,
+        stock_qty: selectedVariant?.stock_qty ?? product.stock_qty ?? null,
         min_order_qty: product.min_order_qty ?? null,
         max_order_qty: product.max_order_qty ?? null,
         order_multiple: product.order_multiple ?? null,
@@ -76,7 +103,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           existing.quantity + quantity,
         );
         return prev.map((item) =>
-          item.id === product.id ? { ...item, quantity: nextQty } : item,
+          (item.cart_key ?? item.id) === cartKey ? { ...item, quantity: nextQty } : item,
         );
       }
 
@@ -85,10 +112,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
-  const updateQuantity = (id: string, quantity: number) => {
+  const updateQuantity = (cartKey: string, quantity: number) => {
     setItems((prev) =>
       prev.map((item) => {
-        if (item.id !== id) {
+        if ((item.cart_key ?? item.id) !== cartKey) {
           return item;
         }
         const nextQty = normalizeCartQuantity(item, quantity);
@@ -97,8 +124,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     );
   };
 
-  const removeItem = (id: string) => {
-    setItems((prev) => prev.filter((item) => item.id !== id));
+  const removeItem = (cartKey: string) => {
+    setItems((prev) => prev.filter((item) => (item.cart_key ?? item.id) !== cartKey));
   };
 
   const clearCart = () => {

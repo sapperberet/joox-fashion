@@ -19,26 +19,34 @@ type SortOption = "newest" | "priceLow" | "priceHigh";
 
 export default function ProductsClient({
   products,
-  categories,
 }: ProductsClientProps) {
   const { locale } = useLanguage();
   const t = copy[locale];
   const [seasonFilter, setSeasonFilter] = useState<SeasonFilter>("all");
-  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [eventFilter, setEventFilter] = useState<"all" | "featured" | "sale" | "new" | "inStock" | "outOfStock">("all");
   const [sortBy, setSortBy] = useState<SortOption>("newest");
+  const [search, setSearch] = useState("");
 
   const visibleProducts = useMemo(() => {
     let filtered = products.filter((product) => {
-      if (product.stock_qty !== null && product.stock_qty !== undefined) {
-        if (product.stock_qty <= 0) {
-          return false;
-        }
-      }
       const seasonMatch =
         seasonFilter === "all" || product.season === seasonFilter;
-      const categoryMatch =
-        categoryFilter === "all" || product.category_id === categoryFilter;
-      return seasonMatch && categoryMatch;
+      const stock = product.stock_qty ?? null;
+      const isOutOfStock = stock !== null && stock <= 0;
+      const isNew = product.created_at ? Date.now() - Date.parse(product.created_at) < 1000 * 60 * 60 * 24 * 14 : false;
+      const eventMatch =
+        eventFilter === "all" ||
+        (eventFilter === "featured" && !!product.featured) ||
+        (eventFilter === "sale" && !!product.is_on_sale) ||
+        (eventFilter === "new" && isNew) ||
+        (eventFilter === "inStock" && !isOutOfStock) ||
+        (eventFilter === "outOfStock" && isOutOfStock);
+      const text = [product.name_en, product.name_ar, product.description_en, product.description_ar]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      const searchMatch = !search.trim() || text.includes(search.trim().toLowerCase());
+      return seasonMatch && eventMatch && searchMatch;
     });
 
     if (sortBy === "priceLow") {
@@ -56,7 +64,7 @@ export default function ProductsClient({
     }
 
     return filtered;
-  }, [products, seasonFilter, categoryFilter, sortBy]);
+  }, [products, seasonFilter, eventFilter, sortBy, search]);
 
   return (
     <div className="relative">
@@ -65,9 +73,9 @@ export default function ProductsClient({
         {/* Decorative Header */}
         <div className="flex flex-col gap-4 sm:gap-6 border-b-2 border-gold/20 pb-6 sm:pb-8">
           <div className="flex items-center justify-center gap-3 sm:gap-4">
-            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gold/40 to-transparent" />
+            <div className="flex-1 h-px bg-linear-to-r from-transparent via-gold/40 to-transparent" />
             <span className="text-2xl sm:text-3xl">𓋹</span>
-            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gold/40 to-transparent" />
+            <div className="flex-1 h-px bg-linear-to-r from-transparent via-gold/40 to-transparent" />
           </div>
           <div className="flex flex-col gap-2 sm:gap-3 text-center">
             <p className="text-xs sm:text-sm uppercase tracking-[0.5em] text-gold/70">
@@ -90,7 +98,18 @@ export default function ProductsClient({
         <RollingProductList products={products.slice(0, 6)} />
 
         {/* Filter Section with Egyptian Styling */}
-        <div className="rounded-3xl border-2 border-gold/20 bg-gradient-to-br from-stone/90 to-stone/80 p-5 sm:p-8 shadow-lg temple-panel">
+        <div className="rounded-3xl border-2 border-gold/20 bg-stone/80 p-5 sm:p-8 shadow-lg temple-panel">
+          <div className="mb-6">
+            <div className="text-xs sm:text-sm uppercase tracking-[0.2em] text-gold mb-3 font-semibold">
+              Search
+            </div>
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search products..."
+              className="w-full rounded-2xl border-2 border-gold/20 bg-obsidian px-4 py-3 text-base text-sand focus:outline-none focus:border-gold/60 focus:ring-2 focus:ring-gold/30 transition hover:border-gold/40"
+            />
+          </div>
           <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gold/20">
             <span className="text-2xl">𓁹</span>
             <div className="text-xs uppercase tracking-[0.4em] text-gold font-semibold">
@@ -126,20 +145,31 @@ export default function ProductsClient({
             </div>
             <div>
               <div className="text-xs sm:text-sm uppercase tracking-[0.2em] text-gold mb-3 sm:mb-4 font-semibold flex items-center gap-2">
-                <span>𓂀</span> {t.products.category}
+                <span>𓂀</span> Events
               </div>
-              <select
-                value={categoryFilter}
-                onChange={(event) => setCategoryFilter(event.target.value)}
-                className="w-full rounded-2xl border-2 border-gold/20 bg-obsidian px-4 py-3 text-base uppercase tracking-[0.2em] text-sand focus:outline-none focus:border-gold/60 focus:ring-2 focus:ring-gold/30 transition hover:border-gold/40"
-              >
-                <option value="all">{t.products.all}</option>
-                {categories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {locale === "ar" ? category.name_ar : category.name_en}
-                  </option>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { value: "all", label: "All" },
+                  { value: "featured", label: "Featured" },
+                  { value: "sale", label: "Sale" },
+                  { value: "new", label: "New" },
+                  { value: "inStock", label: "In Stock" },
+                  { value: "outOfStock", label: "Out of Stock" },
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setEventFilter(option.value as "all" | "featured" | "sale" | "new" | "inStock" | "outOfStock")}
+                    className={`rounded-full border px-3 py-2 text-[0.65rem] uppercase tracking-[0.2em] transition ${
+                      eventFilter === option.value
+                        ? "border-gold bg-gold text-ink font-semibold"
+                        : "border-gold/30 text-sand hover:border-gold/60 hover:bg-gold/5"
+                    }`}
+                  >
+                    {option.label}
+                  </button>
                 ))}
-              </select>
+              </div>
             </div>
             <div>
               <div className="text-xs sm:text-sm uppercase tracking-[0.2em] text-gold mb-3 sm:mb-4 font-semibold flex items-center gap-2">
@@ -178,7 +208,7 @@ export default function ProductsClient({
             </div>
           </>
         ) : (
-          <div className="rounded-3xl border-2 border-gold/20 bg-gradient-to-br from-stone/90 to-stone/80 p-8 sm:p-12 text-center shadow-lg">
+          <div className="rounded-3xl border-2 border-gold/20 bg-stone/80 p-8 sm:p-12 text-center shadow-lg">
             <p className="text-lg sm:text-xl text-gold mb-2">𓉐</p>
             <p className="text-xs sm:text-sm text-sand/70 uppercase tracking-[0.3em]">
               {t.products.empty}

@@ -1,5 +1,31 @@
 export type Season = "summer" | "winter";
 
+export type ProductVariant = {
+  id?: string | null;
+  color?: string | null;
+  size?: string | null;
+  label_en?: string | null;
+  label_ar?: string | null;
+  price?: number | null;
+  sale_price?: number | null;
+  sale_percent?: number | null;
+  image_url?: string | null;
+  stock_qty?: number | null;
+  sku?: string | null;
+};
+
+export type ProductReview = {
+  id: string;
+  product_slug: string;
+  user_name: string;
+  user_email: string;
+  rating: number;
+  title: string;
+  body: string;
+  sort_order?: number | null;
+  created_at: string;
+};
+
 export type Category = {
   id: string;
   name_en: string;
@@ -25,6 +51,8 @@ export type Product = {
   is_active: boolean | null;
   featured: boolean | null;
   season: Season | null;
+  gallery_images?: string[] | null;
+  variants?: ProductVariant[] | null;
   stock_qty?: number | null;
   min_order_qty?: number | null;
   max_order_qty?: number | null;
@@ -36,11 +64,21 @@ export type Product = {
 
 export type CartItem = {
   id: string;
+  cart_key: string;
   slug: string;
   name_en: string;
   name_ar: string;
   price: number;
   image_url: string | null;
+  variant?: ProductVariant | null;
+  variant_label?: string | null;
+  variant_color?: string | null;
+  variant_size?: string | null;
+  variant_image_url?: string | null;
+  variant_price?: number | null;
+  variant_sale_price?: number | null;
+  variant_sale_percent?: number | null;
+  variant_sku?: string | null;
   quantity: number;
   stock_qty?: number | null;
   min_order_qty?: number | null;

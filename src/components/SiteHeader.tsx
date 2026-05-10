@@ -43,8 +43,7 @@ export default function SiteHeader() {
         <Link href="/" className="shrink-0">
           <LogoLockup />
         </Link>
-        
-        {/* Desktop Navigation */}
+
         <nav className="hidden items-center gap-6 text-sm font-semibold uppercase tracking-[0.2em] text-sand md:gap-8 lg:flex">
           <div className="group relative">
             <Link
@@ -76,35 +75,61 @@ export default function SiteHeader() {
           >
             Products
           </Link>
+          <Link
+            href="/track"
+            className={`inline-flex items-center rounded-full px-3 py-1.5 transition ${pathname === '/track' ? "bg-gold/15 text-gold shadow-[0_0_0_1px_rgba(215,180,106,0.25)]" : "text-sand hover:bg-gold/10 hover:text-gold"}`}
+          >
+            {t.nav.track}
+          </Link>
+          <Link
+            href="/account"
+            className="inline-flex items-center rounded-full px-3 py-1.5 transition text-sand hover:bg-gold/10 hover:text-gold"
+          >
+            Account
+          </Link>
+          <Link
+            href="/admin"
+            className="inline-flex items-center rounded-full px-3 py-1.5 transition text-sand hover:bg-gold/10 hover:text-gold"
+          >
+            Admin
+          </Link>
         </nav>
 
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* Mobile Cart Icon */}
           <Link
             href="/cart"
             title={t.nav.cart}
-            className="relative md:hidden inline-flex items-center justify-center rounded-full px-3 py-2.5 text-lg transition hover:bg-gold/10"
+            className="relative inline-flex items-center justify-center gap-2 rounded-2xl border border-gold/25 bg-linear-to-br from-obsidian/90 to-stone/70 px-3.5 py-2.5 text-lg text-gold shadow-[0_8px_24px_rgba(0,0,0,0.18)] transition hover:border-gold/50 hover:shadow-[0_10px_30px_rgba(215,180,106,0.18)] md:hidden"
           >
-            🛒
-            {itemCount > 0 && (
-              <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-gold text-xs font-semibold text-ink">
-                {itemCount}
-              </span>
-            )}
+            <span className="relative flex h-8 w-8 items-center justify-center rounded-full bg-gold/12 text-xl">
+              🛒
+              {itemCount > 0 && (
+                <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full border border-obsidian bg-gold px-1 text-[0.65rem] font-extrabold leading-none text-ink shadow-lg">
+                  {itemCount > 99 ? "99+" : itemCount}
+                </span>
+              )}
+            </span>
+            <span className="hidden text-[0.62rem] font-semibold uppercase tracking-[0.25em] text-sand/80 sm:inline">Cart</span>
           </Link>
 
           <div className="group relative hidden md:block">
             <Link
               href="/cart"
               title={t.nav.cart}
-              className="relative inline-flex items-center justify-center rounded-full px-4 py-2.5 text-lg transition hover:bg-gold/10"
+              className="relative inline-flex items-center gap-3 rounded-full border border-gold/25 bg-linear-to-r from-obsidian/90 via-stone/80 to-obsidian/90 px-4 py-2.5 text-gold shadow-[0_8px_24px_rgba(0,0,0,0.18)] transition hover:border-gold/50 hover:shadow-[0_10px_30px_rgba(215,180,106,0.18)]"
             >
-              🛒
-              {itemCount > 0 && (
-                <span className="ml-2 rounded-full bg-gold px-2.5 py-0.5 text-xs font-semibold text-ink">
-                  {itemCount}
-                </span>
-              )}
+              <span className="relative flex h-10 w-10 items-center justify-center rounded-full border border-gold/20 bg-gold/10 text-2xl">
+                🛒
+                {itemCount > 0 && (
+                  <span className="absolute -right-1.5 -top-1.5 flex h-6 min-w-6 items-center justify-center rounded-full border border-obsidian bg-gold px-1.5 text-[0.68rem] font-extrabold leading-none text-ink shadow-lg">
+                    {itemCount > 99 ? "99+" : itemCount}
+                  </span>
+                )}
+              </span>
+              <span className="flex flex-col items-start text-left leading-tight">
+                <span className="text-[0.62rem] font-semibold uppercase tracking-[0.24em] text-sand/60">Bag</span>
+                <span className="text-sm font-bold uppercase tracking-[0.18em] text-sand">{t.nav.cart}</span>
+              </span>
             </Link>
             <div className="pointer-events-none absolute right-0 top-full z-50 mt-3 w-80 rounded-3xl border border-gold/20 bg-obsidian/95 p-4 opacity-0 shadow-2xl backdrop-blur transition group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100">
               <div className="mb-3 flex items-center justify-between border-b border-gold/10 pb-2 text-xs uppercase tracking-[0.25em] text-gold/80">
@@ -137,17 +162,14 @@ export default function SiteHeader() {
               )}
             </div>
           </div>
-          {/* Desktop Language Toggle */}
           <div className="hidden md:block">
             <LanguageToggle />
           </div>
 
-          {/* Mobile Language Toggle */}
           <div className="md:hidden">
             <LanguageToggle />
           </div>
 
-          {/* Mobile Menu Button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="md:hidden rounded-full px-3 py-2 text-gold transition hover:bg-gold/10"
@@ -164,7 +186,6 @@ export default function SiteHeader() {
         </div>
       </div>
 
-      {/* Mobile Menu */}
       {mobileMenuOpen && (
         <div className="border-t border-gold/10 bg-obsidian/95 backdrop-blur md:hidden">
           <nav className="flex flex-col gap-1 px-4 py-4 sm:px-6">
@@ -192,6 +213,27 @@ export default function SiteHeader() {
               onClick={() => setMobileMenuOpen(false)}
             >
               {t.nav.products}
+            </Link>
+            <Link
+              href="/track"
+              className={`rounded-lg px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] transition border border-transparent hover:bg-gold/10 hover:border-gold/40 ${pathname === '/track' ? "text-gold bg-gold/15 shadow-[0_0_0_1px_rgba(215,180,106,0.25)]" : "text-sand hover:text-gold"}`}
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              {t.nav.track}
+            </Link>
+            <Link
+              href="/account"
+              className="rounded-lg px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] transition border border-transparent hover:bg-gold/10 hover:border-gold/40 text-sand hover:text-gold"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Account
+            </Link>
+            <Link
+              href="/admin"
+              className="rounded-lg px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] transition border border-transparent hover:bg-gold/10 hover:border-gold/40 text-sand hover:text-gold"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Admin
             </Link>
             <Link
               href="/checkout"
