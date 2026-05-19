@@ -13,6 +13,7 @@ type FlashCode =
   | "loginSuccess"
   | "loginFailed"
   | "categoryCreated"
+  | "categoryUpdated"
   | "categoryDeleted"
   | "productCreated"
   | "productUpdated"
@@ -22,6 +23,9 @@ type FlashCode =
   | "couponUpdated"
   | "couponDeleted"
   | "orderUpdated"
+  | "eventCreated"
+  | "eventUpdated"
+  | "eventDeleted"
   | "actionFailed"
   | "missingData";
 
@@ -614,31 +618,31 @@ export async function retryBostaDelivery(formData: FormData) {
     redirectTo(token, "actionFailed");
   }
 
-  const items = Array.isArray(order.items) ? order.items : [];
+  const items = Array.isArray(order!.items) ? order!.items : [];
   const itemsCount = items.reduce((sum, item) => sum + Number(item.quantity ?? 0), 0);
   const itemsDescription = items
     .map((item) => `${item.name_en ?? item.name_ar ?? "Item"} x${item.quantity ?? 1}`)
     .join(", ");
-  const codAmount = order.payment_method === "cod" ? Number(order.total ?? 0) : 0;
-  const goodsValue = Number(order.subtotal ?? 0);
+  const codAmount = order!.payment_method === "cod" ? Number(order!.total ?? 0) : 0;
+  const goodsValue = Number(order!.subtotal ?? 0);
 
   const bostaDelivery = await createBostaDelivery({
-    orderId: order.id,
-    customerName: order.customer_name,
-    phone: order.phone,
+    orderId: order!.id,
+    customerName: order!.customer_name,
+    phone: order!.phone,
     notes: null,
     codAmount,
     goodsValue,
     itemsCount,
     itemsDescription: itemsDescription || "Order items",
     address: {
-      city: order.city,
-      district: order.district ?? "",
-      firstLine: order.address,
-      secondLine: order.landmark ?? null,
-      buildingNumber: order.building_number ?? null,
-      floor: order.floor ?? null,
-      apartment: order.apartment ?? null,
+      city: order!.city,
+      district: order!.district ?? "",
+      firstLine: order!.address,
+      secondLine: order!.landmark ?? null,
+      buildingNumber: order!.building_number ?? null,
+      floor: order!.floor ?? null,
+      apartment: order!.apartment ?? null,
     },
   });
 
@@ -646,21 +650,21 @@ export async function retryBostaDelivery(formData: FormData) {
     await supabase
       .from("orders")
       .update({ shipping_error: "Bosta API not configured." })
-      .eq("id", order.id);
+      .eq("id", order!.id);
     redirectTo(token, "actionFailed");
   }
 
-  const shippingState = bostaDelivery.error ? "failed" : bostaDelivery.state || "created";
+  const shippingState = bostaDelivery!.error ? "failed" : bostaDelivery!.state || "created";
   const { error: updateError } = await supabase
     .from("orders")
     .update({
       shipping_provider: "bosta",
-      shipping_tracking_number: bostaDelivery.trackingNumber || null,
-      shipping_reference: bostaDelivery.businessReference || null,
+      shipping_tracking_number: bostaDelivery!.trackingNumber || null,
+      shipping_reference: bostaDelivery!.businessReference || null,
       shipping_state: shippingState,
-      shipping_error: bostaDelivery.error || null,
+      shipping_error: bostaDelivery!.error || null,
     })
-    .eq("id", order.id);
+    .eq("id", order!.id);
 
   if (updateError) {
     redirectTo(token, "actionFailed");

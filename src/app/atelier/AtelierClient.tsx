@@ -475,13 +475,13 @@ export default function AtelierClient({
           <p className="text-xs text-sand/60">{ui.variantsHint}</p>
           <textarea
             name="description_en"
-            placeholder={labels.descriptionEn}
+            placeholder={labels.descriptionEN}
             rows={2}
             className="rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-sm text-sand"
           />
           <textarea
             name="description_ar"
-            placeholder={labels.descriptionAr}
+            placeholder={labels.descriptionAR}
             rows={2}
             className="rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-sm text-sand"
           />

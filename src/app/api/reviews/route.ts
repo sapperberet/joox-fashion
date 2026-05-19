@@ -43,7 +43,7 @@ export async function POST(request: Request) {
 
   const productKey = body?.productKey?.trim();
 
-  if (!productKey || !body.userName || !body.userEmail || !body.title || !body.body) {
+  if (!body || !productKey || !body.userName || !body.userEmail || !body.title || !body.body) {
     return NextResponse.json({ error: "Invalid review payload." }, { status: 400 });
   }
 

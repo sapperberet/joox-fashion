@@ -110,9 +110,14 @@ export default function ThankYouClient({ orderId }: ThankYouClientProps) {
             <h1 className="mt-3 sm:mt-4 font-display text-3xl sm:text-4xl md:text-5xl tracking-[0.2em] text-gold leading-tight">
               {t.thankYou.title}
             </h1>
-                <p className="text-xl font-bold text-gold break-all">{order.id}</p>
+            <p className="mt-3 text-lg sm:text-xl text-sand/70 leading-relaxed">
               {t.thankYou.body}
             </p>
+            {orderId && (
+              <p className="mt-4 text-xl font-bold text-gold break-all">
+                {orderId}
+              </p>
+            )}
           </div>
 
           {orderId && (

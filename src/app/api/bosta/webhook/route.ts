@@ -131,7 +131,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
   }
 
-  let orderQuery = supabase
+  let orderQuery: any = supabase
     .from("orders")
     .select("id, payment_method, payment_status, status");
 
