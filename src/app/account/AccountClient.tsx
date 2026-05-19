@@ -838,6 +838,33 @@ export default function AccountClient() {
                           key={coupon.id}
                           className="flex items-center justify-between gap-4 rounded-lg p-4 border bg-obsidian/30 border-sand/20"
                         >
+                          <div>
+                            <span className="font-mono text-sm font-bold text-gold">
+                              {coupon.code}
+                            </span>
+                          </div>
+                          <span className="text-xs text-sand/50">
+                            {locale === "ar" ? "مستخدم" : "Used"}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </main>
+        <SiteFooter />
+      </div>
+    );
+  }
+                    <div className="space-y-3">
+                      {coupons.filter((c) => c.claimed).map((coupon) => (
+                        <div
+                          key={coupon.id}
+                          className="flex items-center justify-between gap-4 rounded-lg p-4 border bg-obsidian/30 border-sand/20"
+                        >
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
                               <span className="font-mono text-sm font-bold text-gold">
