@@ -119,7 +119,7 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
       title: product.name_en,
       description,
       url: productUrl,
-      type: "product",
+      type: "website",
       images: [
         {
           url: productImage,
