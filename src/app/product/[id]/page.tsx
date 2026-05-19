@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import ProductClient from "./ProductClient";
 import { getSupabasePublic } from "@/lib/supabase/public";
 import type { Product } from "@/lib/types";
@@ -5,6 +6,27 @@ import type { Product } from "@/lib/types";
 type ProductPageProps = {
   params: { id: string };
 };
+
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim() || "https://joox.name";
+
+function getProductImage(product: Product): string {
+  if (product.image_url) {
+    return product.image_url;
+  }
+  if (Array.isArray(product.gallery_images) && product.gallery_images.length > 0) {
+    const firstGallery = product.gallery_images[0];
+    if (typeof firstGallery === "string" && firstGallery.startsWith("http")) {
+      return firstGallery;
+    }
+  }
+  return `${siteUrl}/joox-fashion.png`;
+}
+
+function getProductDescription(product: Product): string {
+  const descEn = product.description_en?.trim();
+  const baseDesc = descEn ? descEn.substring(0, 155) : `Shop ${product.name_en} at Joox Fashion.`;
+  return baseDesc;
+}
 
 async function getProduct(productId: string): Promise<{ product: Product | null; category: any; subcategory: any }> {
   const supabase = getSupabasePublic();
@@ -74,4 +96,47 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const { product, category, subcategory } = await getProduct(params.id);
   const relatedProducts = product ? await getRelatedProducts(product) : [];
   return <ProductClient product={product} relatedProducts={relatedProducts} category={category} subcategory={subcategory} />;
+}
+
+export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
+  const { product } = await getProduct(params.id);
+
+  if (!product) {
+    return {
+      title: "Product Not Found | Joox Fashion",
+      description: "The product you are looking for is not available.",
+    };
+  }
+
+  const productUrl = `${siteUrl}/product/${product.id}`;
+  const productImage = getProductImage(product);
+  const description = getProductDescription(product);
+
+  return {
+    title: `${product.name_en} | Joox Fashion`,
+    description,
+    openGraph: {
+      title: product.name_en,
+      description,
+      url: productUrl,
+      type: "product",
+      images: [
+        {
+          url: productImage,
+          width: 1200,
+          height: 630,
+          alt: product.name_en,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: product.name_en,
+      description,
+      images: [productImage],
+    },
+    alternates: {
+      canonical: productUrl,
+    },
+  };
 }
