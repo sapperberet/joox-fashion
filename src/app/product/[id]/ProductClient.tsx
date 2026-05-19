@@ -364,7 +364,7 @@ export default function ProductClient({
             </div>
             {displayImages.length > 1 && (
               <div className="grid grid-cols-5 gap-2 sm:gap-3">
-                {displayImages.slice(0, 5).map((imageUrl, index) => (
+                {displayImages.slice(0, Math.min(displayImages.length, 10)).map((imageUrl, index) => (
                   <button
                     key={`${imageUrl}-${index}`}
                     type="button"

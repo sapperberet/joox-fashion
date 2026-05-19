@@ -199,6 +199,52 @@ async function uploadImage(file: File | null, folder: string, slug: string) {
   return data.publicUrl;
 }
 
+async function applyVariantImageUploadsById(formData: FormData, slug: string, variants: ProductVariant[]) {
+  if (!Array.isArray(variants) || variants.length === 0) {
+    return variants;
+  }
+
+  const uploadedById = new Map<string, string>();
+  const prefix = "variant_image_file__";
+  for (const [key, value] of formData.entries()) {
+    if (!key.startsWith(prefix)) {
+      continue;
+    }
+    const file = value as File;
+    if (!file || typeof file.name !== "string" || file.size === 0) {
+      continue;
+    }
+    const encodedId = key.slice(prefix.length);
+    const variantId = decodeURIComponent(encodedId || "").trim();
+    if (!variantId) {
+      continue;
+    }
+    const url = await uploadImage(file, "products", `${slug}-variant-${variantId}`);
+    if (url) {
+      uploadedById.set(variantId, url);
+    }
+  }
+
+  if (uploadedById.size === 0) {
+    return variants;
+  }
+
+  return variants.map((variant) => {
+    const variantId = String(variant.id ?? "").trim();
+    if (!variantId) {
+      return variant;
+    }
+    const uploadedUrl = uploadedById.get(variantId);
+    if (!uploadedUrl) {
+      return variant;
+    }
+    return {
+      ...variant,
+      image_url: variant.image_url || uploadedUrl,
+    };
+  });
+}
+
 export async function loginAdmin(formData: FormData) {
   const user = readText(formData, "username");
   const pass = readText(formData, "password");
@@ -294,6 +340,7 @@ export async function createProduct(formData: FormData) {
   const salePrice = readNumber(formData.get("sale_price"), null);
   const salePercent = readNumber(formData.get("sale_percent"), null);
   const galleryInput = readText(formData, "gallery_images");
+  const galleryFiles = formData.getAll("gallery_images_files").filter((f) => f && typeof (f as File).name === "string") as File[];
   const variantsInput = readText(formData, "variants_json");
   const parsedVariants = parseVariantsInput(variantsInput);
   if (parsedVariants.error) {
@@ -310,6 +357,18 @@ export async function createProduct(formData: FormData) {
   if (imageUrl && !galleryImages.includes(imageUrl)) {
     galleryImages.unshift(imageUrl);
   }
+  if (galleryFiles.length > 0) {
+    const uploadPromises = galleryFiles.slice(0, 10).map((file, i) => uploadImage(file, "products", `${slug}-gallery-${i}`));
+    const uploaded = await Promise.all(uploadPromises);
+    for (const url of uploaded) {
+      if (url && !galleryImages.includes(url)) {
+        galleryImages.push(url);
+      }
+    }
+  }
+  const variantsWithUploads = await applyVariantImageUploadsById(formData, slug, parsedVariants.variants);
+  // limit to 10 images
+  const finalGallery = Array.from(new Set(galleryImages)).slice(0, 10);
   const saleEnabled = Boolean(isOnSale || (salePrice ?? 0) > 0 || (salePercent ?? 0) > 0);
 
   const { error } = await supabase.from("products").insert({
@@ -321,8 +380,8 @@ export async function createProduct(formData: FormData) {
     category_id: categoryId || null,
     price,
     image_url: imageUrl,
-    gallery_images: galleryImages,
-    variants: parsedVariants.variants,
+    gallery_images: finalGallery,
+    variants: variantsWithUploads,
     season: season || null,
     is_active: isActive,
     is_on_sale: saleEnabled,
@@ -501,6 +560,7 @@ export async function updateProduct(formData: FormData) {
   const salePercent = readNumber(formData.get("sale_percent"), null);
   const season = readText(formData, "season");
   const galleryInput = readText(formData, "gallery_images");
+  const galleryFiles = formData.getAll("gallery_images_files").filter((f) => f && typeof (f as File).name === "string") as File[];
   const variantsInput = readText(formData, "variants_json");
   const parsedVariants = parseVariantsInput(variantsInput);
   if (parsedVariants.error) {
@@ -515,8 +575,32 @@ export async function updateProduct(formData: FormData) {
   updates.is_on_sale = saleEnabled;
   if (formData.has("featured")) updates.featured = readBoolean(formData, "featured");
   if (formData.has("is_active")) updates.is_active = readBoolean(formData, "is_active", true);
-  updates.gallery_images = parseGalleryImages(galleryInput);
-  updates.variants = parsedVariants.variants;
+  // merge provided gallery text, existing images and any uploaded files
+  const provided = parseGalleryImages(galleryInput);
+
+  // fetch existing product to get slug and existing gallery images
+  const { data: existing } = await supabase.from("products").select("slug, gallery_images").eq("id", id).maybeSingle();
+  const existingGallery = Array.isArray(existing?.gallery_images) ? existing!.gallery_images : [];
+  const slug = existing?.slug ?? `product-${Date.now()}`;
+
+  const merged = [...provided];
+  for (const img of existingGallery) {
+    if (img && !merged.includes(img)) merged.push(img);
+  }
+
+  if (galleryFiles.length > 0) {
+    const uploadPromises = galleryFiles.slice(0, 10).map((file, i) => uploadImage(file, "products", `${slug}-gallery-${i}`));
+    const uploaded = await Promise.all(uploadPromises);
+    for (const url of uploaded) {
+      if (url && !merged.includes(url)) merged.push(url);
+    }
+  }
+
+  updates.gallery_images = Array.from(new Set(merged)).slice(0, 10);
+
+  const variantsWithUploads = await applyVariantImageUploadsById(formData, slug, parsedVariants.variants);
+
+  updates.variants = variantsWithUploads;
 
   if (!Object.keys(updates).length) {
     redirectTo(token, "missingData");

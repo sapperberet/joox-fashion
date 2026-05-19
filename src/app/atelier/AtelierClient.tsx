@@ -1,9 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import LanguageToggle from "@/components/LanguageToggle";
 import AdminAlert from "@/components/AdminAlert";
+import AdminNavbar from "./AdminNavbar";
 import { useLanguage } from "@/components/SiteProviders";
 import { copy } from "@/lib/i18n";
 import { formatCurrency } from "@/lib/format";
@@ -18,7 +19,6 @@ import {
   deleteEvent,
   deleteProduct,
   loginAdmin,
-  logoutAdmin,
   retryBostaDelivery,
   toggleProductActive,
   updateCategory,
@@ -126,11 +126,11 @@ export default function AtelierClient({
     collectionsOptional: isArabic ? "المجموعات (اختياري)" : "Collections (optional)",
     sortOrder: isArabic ? "ترتيب العرض" : "Sort order",
     uploadImage: isArabic ? "رفع صورة المنتج" : "Upload Product Image",
-    variantsLabel: isArabic ? "Variants (JSON)" : "Variants (JSON)",
+    variantsLabel: isArabic ? "متغيرات المنتج" : "Product Variants",
     variantsHint: isArabic
-      ? "الأحجام المعتادة: M / L / XL / XXL / XXXL. أدخل JSON للمتغيرات."
-      : "Typical sizes: M / L / XL / XXL / XXXL. Enter variant JSON.",
-    galleryLabel: isArabic ? "صور إضافية (سطر لكل رابط)" : "Gallery images (one URL per line)",
+      ? "أضف اللون والمقاس والأسعار والمخزون وارفع صورة لكل متغير عند الحاجة."
+      : "Add color, size, pricing, stock, and optional image per variant.",
+    galleryLabel: isArabic ? "صور إضافية (حتى 10 روابط)" : "Gallery images (up to 10)",
     productsTitle: isArabic ? "المنتجات" : "Products",
     couponsTitleShort: isArabic ? "الكوبونات" : "Coupons",
     collectionsTitle: isArabic ? "المجموعات" : "Collections",
@@ -147,19 +147,121 @@ export default function AtelierClient({
     variantsToggle: isArabic ? "الصور والمتغيرات" : "Variants & gallery",
   };
 
-  const variantPlaceholder = JSON.stringify(
-    [
-      {
-        color: "Black",
-        size: "M",
-        price: 450,
-        stock_qty: 10,
-        image_url: "https://...",
-      },
-    ],
-    null,
-    2,
-  );
+  function VariantEditor({
+    namePrefix = "",
+    initial = [],
+  }: {
+    namePrefix?: string;
+    initial?: any[];
+  }) {
+    const [rows, setRows] = useState(() => {
+      if (!Array.isArray(initial)) return [] as any[];
+      return initial.map((v, i) => ({
+        id: v.id ?? `new-${i}`,
+        color: v.color ?? "",
+        size: v.size ?? "",
+        price: v.price ?? "",
+        sale_price: v.sale_price ?? "",
+        sale_percent: v.sale_percent ?? "",
+        image_url: v.image_url ?? "",
+        stock_qty: v.stock_qty ?? "",
+        sku: v.sku ?? "",
+      }));
+    });
+
+    const updateField = (index: number, key: string, value: any) => {
+      setRows((r) => {
+        const copy = [...r];
+        copy[index] = { ...copy[index], [key]: value };
+        return copy;
+      });
+    };
+
+    const [previewById, setPreviewById] = useState<Record<string, string>>({});
+
+    const addRow = () => setRows((r) => [...r, { id: `new-${Date.now()}`, color: "", size: "", price: "", sale_price: "", sale_percent: "", image_url: "", stock_qty: "", sku: "" }]);
+    const removeRow = (index: number) => setRows((r) => r.filter((_, i) => i !== index));
+
+    const serialized = rows.map((r) => ({
+      id: r.id ?? null,
+      color: r.color || null,
+      size: r.size || null,
+      price: r.price !== "" && r.price !== null ? Number(r.price) : null,
+      sale_price: r.sale_price !== "" && r.sale_price !== null ? Number(r.sale_price) : null,
+      sale_percent: r.sale_percent !== "" && r.sale_percent !== null ? Number(r.sale_percent) : null,
+      image_url: r.image_url || null,
+      stock_qty: r.stock_qty !== "" && r.stock_qty !== null ? Number(r.stock_qty) : null,
+      sku: r.sku || null,
+    }));
+
+    return (
+      <div className="space-y-2">
+        <textarea name={`${namePrefix}variants_json`} value={JSON.stringify(serialized)} readOnly className="hidden" />
+        {rows.map((row, idx) => (
+          <div key={row.id} className="rounded-2xl border border-gold/15 bg-obsidian/30 p-3">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-8 items-center">
+            <input name={`${namePrefix}variant_id`} type="hidden" value={row.id} />
+            <input name={`${namePrefix}variant_color`} value={row.color} onChange={(e) => updateField(idx, "color", e.target.value)} placeholder="Color" className="rounded-2xl border border-gold/20 bg-obsidian px-3 py-2 text-xs text-sand w-full min-w-0" />
+            <input name={`${namePrefix}variant_size`} value={row.size} onChange={(e) => updateField(idx, "size", e.target.value)} placeholder="Size" className="rounded-2xl border border-gold/20 bg-obsidian px-3 py-2 text-xs text-sand w-full min-w-0" />
+            <input name={`${namePrefix}variant_price`} value={row.price} onChange={(e) => updateField(idx, "price", e.target.value)} placeholder="Price" type="number" className="rounded-2xl border border-gold/20 bg-obsidian px-3 py-2 text-xs text-sand w-full min-w-0" />
+            <input name={`${namePrefix}variant_sale_price`} value={row.sale_price} onChange={(e) => updateField(idx, "sale_price", e.target.value)} placeholder="Sale price" type="number" className="rounded-2xl border border-gold/20 bg-obsidian px-3 py-2 text-xs text-sand w-full min-w-0" />
+            <input name={`${namePrefix}variant_sale_percent`} value={row.sale_percent} onChange={(e) => updateField(idx, "sale_percent", e.target.value)} placeholder="Sale %" type="number" className="rounded-2xl border border-gold/20 bg-obsidian px-3 py-2 text-xs text-sand w-full min-w-0" />
+            <input name={`${namePrefix}variant_stock_qty`} value={row.stock_qty} onChange={(e) => updateField(idx, "stock_qty", e.target.value)} placeholder="Stock" type="number" className="rounded-2xl border border-gold/20 bg-obsidian px-3 py-2 text-xs text-sand w-full min-w-0" />
+            <input name={`${namePrefix}variant_sku`} value={row.sku} onChange={(e) => updateField(idx, "sku", e.target.value)} placeholder="SKU" className="rounded-2xl border border-gold/20 bg-obsidian px-3 py-2 text-xs text-sand w-full min-w-0" />
+            </div>
+
+            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto_auto] items-center">
+              <input
+                name={`${namePrefix}variant_image_url`}
+                value={row.image_url}
+                onChange={(e) => updateField(idx, "image_url", e.target.value)}
+                placeholder="Image URL (optional)"
+                className="rounded-2xl border border-gold/20 bg-obsidian px-3 py-2 text-xs text-sand w-full min-w-0"
+              />
+              <label className="inline-flex cursor-pointer items-center justify-center rounded-full border border-gold/30 px-3 py-2 text-xs text-gold hover:bg-gold/10">
+                {isArabic ? "رفع صورة" : "Upload image"}
+                <input
+                  name={`variant_image_file__${encodeURIComponent(String(row.id))}`}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.currentTarget.files?.[0];
+                    if (!file) return;
+                    const preview = URL.createObjectURL(file);
+                    setPreviewById((state) => ({ ...state, [String(row.id)]: preview }));
+                  }}
+                />
+              </label>
+              <button type="button" onClick={() => removeRow(idx)} className="rounded-full border border-gold/30 px-3 py-2 text-xs text-gold">{isArabic ? "حذف" : "Remove"}</button>
+            </div>
+
+            <div className="mt-2 flex items-center gap-3">
+              {(previewById[String(row.id)] || row.image_url) ? (
+                <img
+                  src={previewById[String(row.id)] || row.image_url}
+                  alt={isArabic ? "صورة المتغير" : "Variant image preview"}
+                  className="h-14 w-14 rounded-xl object-cover border border-gold/20"
+                />
+              ) : (
+                <div className="h-14 w-14 rounded-xl border border-dashed border-gold/20 bg-obsidian/40" />
+              )}
+              <p className="text-xs text-sand/60">
+                {previewById[String(row.id)]
+                  ? (isArabic ? "معاينة الصورة الجديدة" : "New image preview")
+                  : row.image_url
+                    ? (isArabic ? "الصورة الحالية" : "Current image")
+                    : (isArabic ? "لا توجد صورة لهذا المتغير" : "No image for this variant")}
+              </p>
+            </div>
+          </div>
+        ))}
+        <div>
+          <button type="button" onClick={addRow} className="rounded-full bg-gold px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-ink">Add variant</button>
+        </div>
+      </div>
+    );
+  }
 
   const formatShippingError = (error?: string | null) => {
     if (!error) {
@@ -240,11 +342,6 @@ export default function AtelierClient({
         </div>
         <div className="flex items-center gap-3">
           <LanguageToggle />
-          <form action={logoutAdmin}>
-            <button className="rounded-full border border-gold/40 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-gold">
-              {labels.signOut}
-            </button>
-          </form>
         </div>
       </div>
       {flashMessage && (
@@ -255,40 +352,7 @@ export default function AtelierClient({
         />
       )}
 
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <a
-          href={`/atelier/events?admin_token=${encodeURIComponent(token)}`}
-          className="rounded-3xl border border-gold/25 bg-stone/80 p-6 transition hover:border-gold/50 hover:bg-stone/90"
-        >
-          <div className="text-xs uppercase tracking-[0.24em] text-gold/80">{isArabic ? "الفعاليات" : "Events"}</div>
-          <h2 className="mt-2 font-display text-xl tracking-[0.14em] text-gold">{isArabic ? "إدارة الفعاليات" : "Manage Events"}</h2>
-          <p className="mt-2 text-sm text-sand/70">{isArabic ? "فعاليات موسمية وعروض ترويجية" : "Seasonal and promotional events"}</p>
-        </a>
-        <a
-          href={`/atelier/categories?admin_token=${encodeURIComponent(token)}`}
-          className="rounded-3xl border border-gold/25 bg-stone/80 p-6 transition hover:border-gold/50 hover:bg-stone/90"
-        >
-          <div className="text-xs uppercase tracking-[0.24em] text-gold/80">{isArabic ? "المجموعات" : "Categories"}</div>
-          <h2 className="mt-2 font-display text-xl tracking-[0.14em] text-gold">{isArabic ? "إدارة المجموعات" : "Manage Categories"}</h2>
-          <p className="mt-2 text-sm text-sand/70">{isArabic ? "مجموعات وتسلسلات هرمية" : "Rich category hierarchy"}</p>
-        </a>
-        <a
-          href={`/atelier/deals?admin_token=${encodeURIComponent(token)}`}
-          className="rounded-3xl border border-gold/25 bg-stone/80 p-6 transition hover:border-gold/50 hover:bg-stone/90"
-        >
-          <div className="text-xs uppercase tracking-[0.24em] text-gold/80">{ui.salesAdmin}</div>
-          <h2 className="mt-2 font-display text-xl tracking-[0.14em] text-gold">{ui.dealsTitle}</h2>
-          <p className="mt-2 text-sm text-sand/70">{ui.dealsBody}</p>
-        </a>
-        <a
-          href={`/atelier/coupons?admin_token=${encodeURIComponent(token)}`}
-          className="rounded-3xl border border-gold/25 bg-stone/80 p-6 transition hover:border-gold/50 hover:bg-stone/90"
-        >
-          <div className="text-xs uppercase tracking-[0.24em] text-gold/80">{ui.couponsAdmin}</div>
-          <h2 className="mt-2 font-display text-xl tracking-[0.14em] text-gold">{ui.couponsTitle}</h2>
-          <p className="mt-2 text-sm text-sand/70">{ui.couponsBody}</p>
-        </a>
-      </section>
+      <AdminNavbar token={token} isArabic={isArabic} />
 
       <section className="grid gap-6 lg:grid-cols-2">
         <form
@@ -460,19 +524,33 @@ export default function AtelierClient({
               📎 {ui.uploadImage}
             </label>
           </div>
+          <div className="relative">
+            <input
+              name="gallery_images_files"
+              type="file"
+              accept="image/*"
+              multiple
+              className="absolute inset-0 h-full w-full opacity-0 cursor-pointer"
+              id="product-gallery-upload"
+            />
+            <label
+              htmlFor="product-gallery-upload"
+              className="block rounded-2xl border border-gold/20 bg-obsidian/70 px-4 py-3 text-sm text-sand text-center cursor-pointer hover:bg-obsidian hover:border-gold/40 transition"
+            >
+              📎 {ui.galleryLabel}
+            </label>
+          </div>
           <textarea
             name="gallery_images"
             placeholder={ui.galleryLabel}
             rows={2}
             className="rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-sm text-sand"
           />
-          <textarea
-            name="variants_json"
-            placeholder={variantPlaceholder}
-            rows={4}
-            className="rounded-2xl border border-gold/20 bg-obsidian px-4 py-3 text-xs text-sand font-mono"
-          />
-          <p className="text-xs text-sand/60">{ui.variantsHint}</p>
+          <div className="rounded-2xl border border-gold/20 bg-obsidian px-4 py-3">
+            <p className="text-xs text-sand/70 font-semibold mb-2">{ui.variantsLabel ?? ui.variantsToggle}</p>
+            <VariantEditor initial={[]} />
+            <p className="text-xs text-sand/60 mt-2">{ui.variantsHint}</p>
+          </div>
           <textarea
             name="description_en"
             placeholder={labels.descriptionEN}
@@ -584,6 +662,22 @@ export default function AtelierClient({
                     {ui.variantsToggle}
                   </summary>
                   <div className="mt-3 grid gap-3">
+                    <div className="relative">
+                      <input
+                        name="gallery_images_files"
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        className="absolute inset-0 h-full w-full opacity-0 cursor-pointer"
+                        id={`product-gallery-upload-${product.id}`}
+                      />
+                      <label
+                        htmlFor={`product-gallery-upload-${product.id}`}
+                        className="block rounded-2xl border border-gold/20 bg-obsidian px-3 py-2 text-xs text-sand text-center cursor-pointer hover:bg-obsidian hover:border-gold/40 transition"
+                      >
+                        📎 {ui.galleryLabel}
+                      </label>
+                    </div>
                     <textarea
                       name="gallery_images"
                       defaultValue={serializeGallery(product.gallery_images)}
@@ -591,13 +685,7 @@ export default function AtelierClient({
                       rows={2}
                       className="rounded-2xl border border-gold/20 bg-obsidian px-3 py-2 text-xs text-sand"
                     />
-                    <textarea
-                      name="variants_json"
-                      defaultValue={serializeVariants(product.variants)}
-                      placeholder={variantPlaceholder}
-                      rows={5}
-                      className="rounded-2xl border border-gold/20 bg-obsidian px-3 py-2 text-xs text-sand font-mono"
-                    />
+                    <VariantEditor initial={product.variants ?? []} />
                     <div className="text-xs text-sand/60">
                       {ui.variantsHint}
                     </div>
@@ -613,19 +701,19 @@ export default function AtelierClient({
         <h2 className="font-display text-xl tracking-[0.2em] text-gold">{ui.couponsTitleShort}</h2>
         <form action={createCoupon} className="mt-4 grid grid-cols-1 gap-2 md:grid-cols-4">
           <input type="hidden" name="admin_token" value={token} />
-          <input name="code" placeholder="Code" className="rounded-2xl border border-gold/20 bg-obsidian px-3 py-2 text-sm text-sand" />
+          <input name="code" placeholder="Code" className="rounded-2xl border border-gold/20 bg-obsidian px-3 py-2 text-sm text-sand w-full min-w-0" />
           <select name="type" className="rounded-2xl border border-gold/20 bg-obsidian px-3 py-2 text-sm text-sand">
             <option value="percent">Percent</option>
             <option value="fixed">Fixed</option>
           </select>
-          <input name="value" type="number" min={0} step="0.01" placeholder="Value" className="rounded-2xl border border-gold/20 bg-obsidian px-3 py-2 text-sm text-sand" />
-          <div className="flex gap-2">
-            <input name="min_subtotal" type="number" min={0} step="0.01" placeholder="Min subtotal" className="rounded-2xl border border-gold/20 bg-obsidian px-3 py-2 text-sm text-sand" />
-            <input name="max_uses" type="number" min={0} step="1" placeholder="Max uses" className="rounded-2xl border border-gold/20 bg-obsidian px-3 py-2 text-sm text-sand" />
+          <input name="value" type="number" min={0} step="0.01" placeholder="Value" className="rounded-2xl border border-gold/20 bg-obsidian px-3 py-2 text-sm text-sand w-full min-w-0" />
+          <div className="flex gap-2 min-w-0">
+            <input name="min_subtotal" type="number" min={0} step="0.01" placeholder="Min subtotal" className="rounded-2xl border border-gold/20 bg-obsidian px-3 py-2 text-sm text-sand w-full min-w-0" />
+            <input name="max_uses" type="number" min={0} step="1" placeholder="Max uses" className="rounded-2xl border border-gold/20 bg-obsidian px-3 py-2 text-sm text-sand w-full min-w-0" />
           </div>
-          <div className="flex gap-2">
-            <input name="starts_at" type="date" className="rounded-2xl border border-gold/20 bg-obsidian px-3 py-2 text-sm text-sand" />
-            <input name="expires_at" type="date" className="rounded-2xl border border-gold/20 bg-obsidian px-3 py-2 text-sm text-sand" />
+          <div className="flex gap-2 min-w-0">
+            <input name="starts_at" type="date" className="rounded-2xl border border-gold/20 bg-obsidian px-3 py-2 text-sm text-sand w-full min-w-0" />
+            <input name="expires_at" type="date" className="rounded-2xl border border-gold/20 bg-obsidian px-3 py-2 text-sm text-sand w-full min-w-0" />
             <button className="rounded-full bg-gold px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-ink">Add</button>
           </div>
         </form>
@@ -639,11 +727,11 @@ export default function AtelierClient({
                 <div className="text-xs text-sand/60">Min: {c.min_subtotal ?? 0} • Uses: {c.used_count ?? 0}/{c.max_uses ?? "∞"}</div>
                 <div className="text-xs text-sand/60">{c.starts_at ? `From ${new Date(c.starts_at).toLocaleDateString()}` : ""} {c.expires_at ? `Until ${new Date(c.expires_at).toLocaleDateString()}` : ""}</div>
               </div>
-              <form action={updateCoupon} className="flex items-center gap-2">
+              <form action={updateCoupon} className="flex items-center gap-2 min-w-0">
                 <input type="hidden" name="admin_token" value={token} />
                 <input type="hidden" name="coupon_id" value={c.id} />
-                <input name="code" defaultValue={c.code} className="rounded-2xl border border-gold/20 bg-obsidian px-3 py-2 text-sm text-sand" />
-                <input name="value" defaultValue={String(c.value)} type="number" step="0.01" className="rounded-2xl border border-gold/20 bg-obsidian px-3 py-2 text-sm text-sand" />
+                <input name="code" defaultValue={c.code} className="rounded-2xl border border-gold/20 bg-obsidian px-3 py-2 text-sm text-sand w-full min-w-0" />
+                <input name="value" defaultValue={String(c.value)} type="number" step="0.01" className="rounded-2xl border border-gold/20 bg-obsidian px-3 py-2 text-sm text-sand w-24 min-w-0" />
                 <button className="rounded-full border border-gold/30 px-3 py-2 text-gold">{labels.update}</button>
               </form>
               <form action={deleteCoupon} className="flex items-center justify-end">
@@ -878,5 +966,17 @@ export default function AtelierClient({
         </div>
       </section>
     </main>
+  );
+}
+
+function NavLink({ href, label, sublabel }: { href: string; label: string; sublabel?: string }) {
+  return (
+    <a
+      href={href}
+      className="inline-flex min-w-0 flex-col gap-1 rounded-2xl border border-gold/25 bg-stone/80 px-5 py-4 text-left transition hover:border-gold/50 hover:bg-stone/90"
+    >
+      <span className="text-xs uppercase tracking-[0.18em] text-gold/80 truncate">{label}</span>
+      {sublabel && <span className="mt-1 font-display text-sm tracking-[0.08em] text-gold truncate">{sublabel}</span>}
+    </a>
   );
 }

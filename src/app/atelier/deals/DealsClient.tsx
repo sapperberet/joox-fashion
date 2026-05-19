@@ -6,7 +6,7 @@ import { useLanguage } from "@/components/SiteProviders";
 import { copy } from "@/lib/i18n";
 import { getDealDescription } from "@/lib/deals";
 import { createDeal, updateDeal, deleteDeal, toggleDealStatus } from "./actions";
-import { logoutAdmin } from "../actions";
+import AdminNavbar from "../AdminNavbar";
 
 interface Deal {
   id: string;
@@ -88,6 +88,8 @@ export default function DealsClient({ deals, products, adminToken }: DealsClient
 
   return (
     <main className="mx-auto flex max-w-6xl flex-col gap-12 px-6 py-16">
+      <AdminNavbar token={adminToken} isArabic={isArabic} />
+
       <div className="flex flex-wrap items-start justify-between gap-4 rounded-3xl border border-gold/20 bg-stone/80 p-6">
         <Link href={`/atelier?admin_token=${encodeURIComponent(adminToken)}`}>
           <button className="text-sm text-gold/70 hover:text-gold">
@@ -101,13 +103,6 @@ export default function DealsClient({ deals, products, adminToken }: DealsClient
           <p className="mt-2 text-sm text-sand/70">
             {isArabic ? "أنشئ وأدر عروض شراء X والحصول على Y مجاني" : "Create and manage buy X get Y free deals"}
           </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <form action={logoutAdmin}>
-            <button className="rounded-full border border-gold/40 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-gold">
-              {labels.signOut}
-            </button>
-          </form>
         </div>
       </div>
 

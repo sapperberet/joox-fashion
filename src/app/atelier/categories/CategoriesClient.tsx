@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import LanguageToggle from "@/components/LanguageToggle";
 import AdminAlert from "@/components/AdminAlert";
+import AdminNavbar from "../AdminNavbar";
 import { useLanguage } from "@/components/SiteProviders";
 import { copy } from "@/lib/i18n";
 import type { Category } from "@/lib/types";
@@ -11,7 +11,6 @@ import {
   createCategory,
   deleteCategory,
   updateCategory,
-  logoutAdmin,
 } from "../actions";
 
 type CategoriesClientProps = {
@@ -61,6 +60,8 @@ export default function CategoriesClient({
 
   return (
     <main className="mx-auto flex max-w-6xl flex-col gap-12 px-6 py-16">
+      <AdminNavbar token={token} isArabic={isArabic} />
+
       <div className="flex flex-wrap items-start justify-between gap-4 rounded-3xl border border-gold/20 bg-stone/80 p-6">
         <Link href={`/atelier?admin_token=${encodeURIComponent(token)}`}>
           <button className="text-sm text-gold/70 hover:text-gold">
@@ -74,14 +75,6 @@ export default function CategoriesClient({
           <p className="mt-2 text-sm text-sand/70">
             {labels.categoriesDescription}
           </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <LanguageToggle />
-          <form action={logoutAdmin}>
-            <button className="rounded-full border border-gold/40 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-gold">
-              {labels.signOut}
-            </button>
-          </form>
         </div>
       </div>
 
