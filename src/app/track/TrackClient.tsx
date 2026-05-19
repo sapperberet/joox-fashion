@@ -13,6 +13,7 @@ export default function TrackClient() {
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const isArabic = locale === "ar";
 
   const handleTrack = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,7 +24,7 @@ export default function TrackClient() {
     setOrder(null);
 
     try {
-      const id = orderId.trim().toUpperCase().replace("JOOX-", "");
+      const id = orderId.trim().replace(/^JOOX-/i, "");
       const res = await fetch(`/api/orders/${id}`);
       if (!res.ok) {
         throw new Error(t.track.notFound);
@@ -40,6 +41,24 @@ export default function TrackClient() {
   const getStatusStep = (status: string) => {
     const steps = ["new", "confirmed", "packed", "shipped", "delivered"];
     return steps.indexOf(status.toLowerCase());
+  };
+
+  const getShippingErrorMessage = (message?: string | null) => {
+    if (!message) {
+      return "";
+    }
+    const normalized = message.toLowerCase();
+    if (normalized.includes("district not found")) {
+      return isArabic
+        ? "المنطقة غير موجودة في بوستا. يرجى التحقق من العنوان أو التواصل معنا."
+        : "Bosta district not found. Please verify the address or contact us.";
+    }
+    if (normalized.includes("city not found")) {
+      return isArabic
+        ? "المدينة غير موجودة في بوستا. يرجى التحقق من المدينة أو التواصل معنا."
+        : "Bosta city not found. Please verify the city or contact us.";
+    }
+    return message;
   };
 
   const currentStep = order ? getStatusStep(order.status) : -1;
@@ -84,7 +103,7 @@ export default function TrackClient() {
                 <p className="text-xs uppercase tracking-[0.2em] text-sand/60">
                   {t.thankYou.reference}
                 </p>
-                <p className="text-xl font-bold text-gold">JOOX-{order.id.slice(0, 8).toUpperCase()}</p>
+                <p className="text-xl font-bold text-gold break-all">{order.id}</p>
               </div>
               <div className="text-right">
                 <p className="text-xs uppercase tracking-[0.2em] text-sand/60">
@@ -113,7 +132,7 @@ export default function TrackClient() {
                           : "border-gold/30 bg-obsidian text-sand/30"
                       }`}
                     >
-                      {idx <= currentStep ? "✓" : idx + 1}
+                      {idx <= currentStep ? "•" : idx + 1}
                     </div>
                     <span className={`text-[0.6rem] font-bold uppercase tracking-widest ${idx <= currentStep ? "text-gold" : "text-sand/30"} hidden sm:block`}>
                       {t.track[`status${step.charAt(0).toUpperCase() + step.slice(1)}` as keyof typeof t.track] || step}
@@ -146,6 +165,11 @@ export default function TrackClient() {
                     >
                       {t.track.trackOnCourier}
                     </a>
+                  )}
+                  {order.shipping_error && (
+                    <div className="mt-3 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-300">
+                      {getShippingErrorMessage(order.shipping_error)}
+                    </div>
                   )}
                 </div>
               </div>
@@ -187,6 +211,17 @@ export default function TrackClient() {
                     )}
                     <div>
                       <p className="font-bold text-sand">{locale === 'ar' ? item.name_ar : item.name_en}</p>
+
+                  {order.receipt_url && (
+                    <div className="mt-10 rounded-3xl border border-gold/20 bg-stone/80 p-6 temple-panel">
+                      <h3 className="mb-4 text-xs uppercase tracking-[0.3em] text-gold/80 font-bold">
+                        {t.checkout.receipt}
+                      </h3>
+                      <div className="relative h-64 overflow-hidden rounded-2xl border border-gold/20 bg-obsidian">
+                        <img src={order.receipt_url} alt="Receipt" className="h-full w-full object-contain" />
+                      </div>
+                    </div>
+                  )}
                       <p className="text-xs text-sand/60">
                         {item.variant_label ? (locale === 'ar' ? item.variant_label_ar : item.variant_label_en) : ""}
                         {item.variant_label && " • "}

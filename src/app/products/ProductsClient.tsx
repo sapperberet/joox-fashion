@@ -5,6 +5,7 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import ProductCard from "@/components/ProductCard";
 import RollingProductList from "@/components/RollingProductList";
+import CartSidebar from "@/components/CartSidebar";
 import { copy } from "@/lib/i18n";
 import { useLanguage } from "@/components/SiteProviders";
 import type { Category, Product, Season } from "@/lib/types";
@@ -13,6 +14,7 @@ type ProductsClientProps = {
   products: Product[];
   categories: Category[];
   initialCategorySlug?: string;
+  mostSoldProducts?: Product[];
 };
 
 type SeasonFilter = Season | "all";
@@ -22,6 +24,7 @@ export default function ProductsClient({
   products,
   categories,
   initialCategorySlug,
+  mostSoldProducts = [],
 }: ProductsClientProps) {
   const { locale } = useLanguage();
   const t = copy[locale];
@@ -33,6 +36,7 @@ export default function ProductsClient({
   const [eventFilter, setEventFilter] = useState<"all" | "featured" | "sale" | "new" | "inStock" | "outOfStock">("all");
   const [sortBy, setSortBy] = useState<SortOption>("newest");
   const [search, setSearch] = useState("");
+  const rollingProducts = mostSoldProducts.length ? mostSoldProducts : products.slice(0, 6);
 
   const categoryById = useMemo(() => {
     const map = new Map<string, Category>();
@@ -91,7 +95,8 @@ export default function ProductsClient({
   return (
     <div className="relative">
       <SiteHeader />
-      <main className="mx-auto flex max-w-6xl flex-col gap-8 sm:gap-12 px-4 sm:px-6 py-8 sm:py-16">
+      <CartSidebar />
+      <main className="mx-auto flex max-w-350 flex-col gap-8 sm:gap-12 px-4 sm:px-6 py-8 sm:py-16">
         {/* Decorative Header */}
         <div className="flex flex-col gap-4 sm:gap-6 border-b-2 border-gold/20 pb-6 sm:pb-8">
           <div className="flex items-center justify-center gap-3 sm:gap-4">
@@ -101,48 +106,48 @@ export default function ProductsClient({
           </div>
           <div className="flex flex-col gap-2 sm:gap-3 text-center">
             <p className="text-xs sm:text-sm uppercase tracking-[0.5em] text-gold/70">
-              ◇◇◇ {t.nav.products} ◇◇◇
+              {t.nav.products}
             </p>
             <h1 className="font-display text-4xl sm:text-5xl md:text-6xl tracking-[0.2em] text-gold">
               {t.nav.products}
             </h1>
             <p className="text-base sm:text-lg text-sand/70 flex items-center justify-center gap-2">
-              𓂀 {t.hero.description} 𓂀
+              {t.hero.description}
             </p>
           </div>
           <div className="flex items-center justify-center gap-3 sm:gap-4">
-            <span className="text-lg sm:text-xl">◆</span>
-            <span className="text-xl sm:text-2xl">𓉐</span>
-            <span className="text-lg sm:text-xl">◆</span>
+            <span className="text-lg sm:text-xl">–</span>
+            <span className="text-xl sm:text-2xl">•</span>
+            <span className="text-lg sm:text-xl">–</span>
           </div>
         </div>
         
-        <RollingProductList products={products.slice(0, 6)} />
+        <RollingProductList products={rollingProducts} />
 
         {/* Filter Section with Egyptian Styling */}
         <div className="rounded-3xl border-2 border-gold/20 bg-stone/80 p-5 sm:p-8 shadow-lg temple-panel">
           <div className="mb-6">
             <div className="text-xs sm:text-sm uppercase tracking-[0.2em] text-gold mb-3 font-semibold">
-              Search
+              {t.products.searchPlaceholder}
             </div>
             <input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search products..."
+              placeholder={t.products.searchPlaceholder}
               className="w-full rounded-2xl border-2 border-gold/20 bg-obsidian px-4 py-3 text-base text-sand focus:outline-none focus:border-gold/60 focus:ring-2 focus:ring-gold/30 transition hover:border-gold/40"
             />
           </div>
           <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gold/20">
-            <span className="text-2xl">𓁹</span>
+            <span className="text-2xl">•</span>
             <div className="text-xs uppercase tracking-[0.4em] text-gold font-semibold">
               {t.products.filtersTitle}
             </div>
-            <span className="text-lg">𓂀</span>
+            <span className="text-lg">•</span>
           </div>
           <div className="grid gap-6 sm:gap-8 md:grid-cols-[1.2fr_1fr_1fr]">
             <div>
               <div className="text-xs sm:text-sm uppercase tracking-[0.2em] text-gold mb-3 sm:mb-4 font-semibold flex items-center gap-2">
-                <span>𓇳𓂀</span> {t.products.season}
+                {t.products.season}
               </div>
               <div className="flex flex-wrap gap-2">
                 {[
@@ -167,13 +172,13 @@ export default function ProductsClient({
             </div>
             <div>
               <div className="text-xs sm:text-sm uppercase tracking-[0.2em] text-gold mb-3 sm:mb-4 font-semibold flex items-center gap-2">
-                <span>◈</span> Category
+                <span>◈</span> {t.products.category}
               </div>
               <div className="flex flex-wrap gap-2">
                 {[
-                  { value: "all", label: "All" },
-                  { value: "tops", label: "Tops" },
-                  { value: "pants", label: "Pants" },
+                  { value: "all", label: t.products.all },
+                  { value: "tops", label: t.nav.tops },
+                  { value: "pants", label: t.nav.pants },
                 ].map((option) => (
                   <button
                     key={option.value}
@@ -192,16 +197,16 @@ export default function ProductsClient({
             </div>
             <div>
               <div className="text-xs sm:text-sm uppercase tracking-[0.2em] text-gold mb-3 sm:mb-4 font-semibold flex items-center gap-2">
-                <span>𓂀</span> Events
+                {t.products.events}
               </div>
               <div className="grid grid-cols-2 gap-2">
                 {[
-                  { value: "all", label: "All" },
-                  { value: "featured", label: "Featured" },
-                  { value: "sale", label: "Sale" },
-                  { value: "new", label: "New" },
-                  { value: "inStock", label: "In Stock" },
-                  { value: "outOfStock", label: "Out of Stock" },
+                  { value: "all", label: t.products.all },
+                  { value: "featured", label: t.products.featured },
+                  { value: "sale", label: t.products.sale },
+                  { value: "new", label: t.products.new },
+                  { value: "inStock", label: t.products.inStock },
+                  { value: "outOfStock", label: t.products.outOfStock },
                 ].map((option) => (
                   <button
                     key={option.value}
@@ -239,24 +244,24 @@ export default function ProductsClient({
         {visibleProducts.length ? (
           <>
             <div className="flex items-center justify-center gap-3 py-4">
-              <span className="text-gold/60">◆</span>
-              <span className="text-gold/40">◇</span>
-              <span className="text-gold/60">◆</span>
+              <span className="text-gold/60">–</span>
+              <span className="text-gold/40">–</span>
+              <span className="text-gold/60">–</span>
             </div>
-            <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
               {visibleProducts.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
             </div>
             <div className="flex items-center justify-center gap-3 py-4">
-              <span className="text-gold/60">◆</span>
-              <span className="text-gold/40">◇</span>
-              <span className="text-gold/60">◆</span>
+              <span className="text-gold/60">–</span>
+              <span className="text-gold/40">–</span>
+              <span className="text-gold/60">–</span>
             </div>
           </>
         ) : (
           <div className="rounded-3xl border-2 border-gold/20 bg-stone/80 p-8 sm:p-12 text-center shadow-lg">
-            <p className="text-lg sm:text-xl text-gold mb-2">𓉐</p>
+            <p className="text-lg sm:text-xl text-gold mb-2">○</p>
             <p className="text-xs sm:text-sm text-sand/70 uppercase tracking-[0.3em]">
               {t.products.empty}
             </p>

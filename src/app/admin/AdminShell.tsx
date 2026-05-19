@@ -1,15 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import SiteHeader from "@/components/SiteHeader";
-import SiteFooter from "@/components/SiteFooter";
 import LanguageToggle from "@/components/LanguageToggle";
 import { copy } from "@/lib/i18n";
 import { useLanguage } from "@/components/SiteProviders";
 
 type AdminShellProps = {
   title: string;
-  active: "customers" | "entries" | "search" | "reviews";
+  active: "customers" | "entries" | "search" | "reviews" | "scores";
   children: React.ReactNode;
   flash?: {
     kind?: "success" | "error" | "info";
@@ -30,15 +28,41 @@ export default function AdminShell({ title, active, children, flash }: AdminShel
 
   return (
     <div className="relative">
-      <SiteHeader />
-      <main className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6 sm:py-12">
+      <header className="sticky top-0 z-40 border-b border-gold/10 bg-obsidian/90 backdrop-blur">
+        <div className="mx-auto flex max-w-300 flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-6">
+          <div className="flex items-center gap-3">
+            <Link href="/admin" className="text-sm font-semibold uppercase tracking-[0.3em] text-gold">
+              {t.title}
+            </Link>
+            <span className="text-xs uppercase tracking-[0.2em] text-sand/50">{t.subtitle}</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/"
+              className="rounded-full border border-gold/30 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-gold hover:bg-gold/10"
+            >
+              {copy[locale].nav.home}
+            </Link>
+            <LanguageToggle />
+          </div>
+        </div>
+        <div className="border-t border-gold/10">
+          <div className="mx-auto flex max-w-300 flex-wrap items-center gap-2 px-4 py-3 sm:px-6">
+            <Tab href="/admin/customers" label={t.tabs.customers} active={active === "customers"} />
+            <Tab href="/admin/entries" label={t.tabs.entries} active={active === "entries"} />
+            <Tab href="/admin/search" label={t.tabs.search} active={active === "search"} />
+            <Tab href="/admin/reviews" label={t.tabs.reviews} active={active === "reviews"} />
+            <Tab href="/admin/scores" label={t.tabs.scores} active={active === "scores"} />
+          </div>
+        </div>
+      </header>
+      <main className="mx-auto flex max-w-300 flex-col gap-6 px-4 py-8 sm:px-6 sm:py-12">
         <div className="rounded-3xl border border-gold/20 bg-stone/80 p-6 temple-panel">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <h1 className="font-display text-3xl tracking-[0.2em] text-gold">{title}</h1>
               <p className="mt-2 text-sm text-sand/70">{t.subtitle}</p>
             </div>
-            <LanguageToggle />
           </div>
           {flashMessage ? (
             <div className={`mt-4 rounded-2xl border px-4 py-3 text-sm ${flashClass}`}>
@@ -46,15 +70,8 @@ export default function AdminShell({ title, active, children, flash }: AdminShel
             </div>
           ) : null}
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Tab href="/admin/customers" label={t.tabs.customers} active={active === "customers"} />
-          <Tab href="/admin/entries" label={t.tabs.entries} active={active === "entries"} />
-          <Tab href="/admin/search" label={t.tabs.search} active={active === "search"} />
-          <Tab href="/admin/reviews" label={t.tabs.reviews} active={active === "reviews"} />
-        </div>
         {children}
       </main>
-      <SiteFooter />
     </div>
   );
 }

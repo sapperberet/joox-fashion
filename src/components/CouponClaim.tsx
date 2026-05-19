@@ -95,7 +95,7 @@ export default function CouponClaim({
           {coupons.map((coupon) => {
             const meets = meetsRequirements(coupon);
             const canClaim = canClaimMore(coupon);
-            const hasClaimed = claimed.has(coupon.id);
+            const hasClaimed = claimed.has(coupon.id) || Boolean(coupon.claimed);
 
             return (
               <div

@@ -10,9 +10,9 @@ export type ReviewSummary = {
   distribution: number[];
 };
 
-export async function fetchProductReviews(productSlug: string) {
+export async function fetchProductReviews(productKey: string) {
   try {
-    const response = await fetch(`/api/reviews?productSlug=${encodeURIComponent(productSlug)}`, {
+    const response = await fetch(`/api/reviews?productKey=${encodeURIComponent(productKey)}`, {
       cache: "no-store",
     });
     if (!response.ok) {
@@ -26,7 +26,7 @@ export async function fetchProductReviews(productSlug: string) {
 }
 
 export async function submitProductReview(input: {
-  productSlug: string;
+  productKey: string;
   userName: string;
   userEmail: string;
   rating: number;
@@ -40,7 +40,14 @@ export async function submitProductReview(input: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${input.token}`,
     },
-    body: JSON.stringify(input),
+    body: JSON.stringify({
+      productKey: input.productKey,
+      userName: input.userName,
+      userEmail: input.userEmail,
+      rating: input.rating,
+      title: input.title,
+      body: input.body,
+    }),
   });
 
   if (!response.ok) {
@@ -80,7 +87,7 @@ export function sortProductReviews(reviews: ProductReview[], sort: ReviewSort) {
 }
 
 export function buildProductReview(review: {
-  productSlug: string;
+  productKey: string;
   userName: string;
   userEmail: string;
   rating: number;
@@ -89,8 +96,8 @@ export function buildProductReview(review: {
   sortOrder?: number | null;
 }): ProductReview {
   return {
-    id: `${review.productSlug}:${review.userEmail}:${Date.now()}`,
-    product_slug: review.productSlug,
+    id: `${review.productKey}:${review.userEmail}:${Date.now()}`,
+    product_slug: review.productKey,
     user_name: review.userName,
     user_email: review.userEmail,
     rating: Math.max(1, Math.min(5, Math.round(review.rating))),

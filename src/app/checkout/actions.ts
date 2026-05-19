@@ -275,7 +275,6 @@ export async function createOrder(formData: FormData) {
     const item: CartItem = {
       id: dbProduct.id,
       cart_key: entry.cart_key || dbProduct.id,
-      slug: dbProduct.slug,
       name_en: dbProduct.name_en,
       name_ar: dbProduct.name_ar,
       price: selectedPrice,

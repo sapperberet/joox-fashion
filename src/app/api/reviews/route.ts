@@ -3,8 +3,8 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
-  const productSlug = url.searchParams.get("productSlug")?.trim();
-  if (!productSlug) {
+  const productKey = url.searchParams.get("productKey")?.trim();
+  if (!productKey) {
     return NextResponse.json({ reviews: [] });
   }
 
@@ -12,7 +12,7 @@ export async function GET(request: Request) {
   const { data, error } = await supabase
     .from("product_reviews")
     .select("id, product_slug, user_name, user_email, rating, title, body, is_visible, created_at")
-    .eq("product_slug", productSlug)
+    .eq("product_slug", productKey)
     .eq("is_visible", true)
     .order("created_at", { ascending: false });
 
@@ -32,7 +32,7 @@ export async function POST(request: Request) {
 
   const body = (await request.json().catch(() => null)) as
     | {
-        productSlug?: string;
+        productKey?: string;
         userName?: string;
         userEmail?: string;
         rating?: number;
@@ -41,7 +41,9 @@ export async function POST(request: Request) {
       }
     | null;
 
-  if (!body?.productSlug || !body.userName || !body.userEmail || !body.title || !body.body) {
+  const productKey = body?.productKey?.trim();
+
+  if (!productKey || !body.userName || !body.userEmail || !body.title || !body.body) {
     return NextResponse.json({ error: "Invalid review payload." }, { status: 400 });
   }
 
@@ -52,7 +54,7 @@ export async function POST(request: Request) {
   }
 
   const reviewRecord = {
-    product_slug: body.productSlug,
+    product_slug: productKey,
     user_id: userData.user.id,
     user_name: body.userName,
     user_email: body.userEmail,

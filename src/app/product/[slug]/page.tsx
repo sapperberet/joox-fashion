@@ -6,31 +6,18 @@ type ProductPageProps = {
   params: { slug: string };
 };
 
-async function getProduct(identifier: string): Promise<{ product: Product | null; category: any; subcategory: any }> {
+async function getProduct(productId: string): Promise<{ product: Product | null; category: any; subcategory: any }> {
   const supabase = getSupabasePublic();
   if (!supabase) {
     return { product: null, category: null, subcategory: null };
   }
 
-  let product: Product | null = null;
-  const byId = await supabase
+  const { data: product } = await supabase
     .from("products")
     .select("*")
-    .eq("id", identifier)
+    .eq("id", productId)
     .eq("is_active", true)
     .maybeSingle();
-
-  if (byId.data) {
-    product = byId.data;
-  } else {
-    const { data } = await supabase
-      .from("products")
-      .select("*")
-      .eq("slug", identifier)
-      .eq("is_active", true)
-      .maybeSingle();
-    product = data ?? null;
-  }
 
   if (!product) {
     return { product: null, category: null, subcategory: null };

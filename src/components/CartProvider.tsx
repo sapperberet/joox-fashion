@@ -74,7 +74,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       const baseItem: CartItem = {
         id: product.id,
         cart_key: cartKey,
-        slug: product.slug,
         name_en: product.name_en,
         name_ar: product.name_ar,
         price: resolvedPrice,

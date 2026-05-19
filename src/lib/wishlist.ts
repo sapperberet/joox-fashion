@@ -1,7 +1,8 @@
 "use client";
 
 export type WishlistItem = {
-  slug: string;
+  product_id: string;
+  slug?: string | null;
   name_en: string;
   name_ar: string;
   image_url: string | null;
@@ -21,7 +22,15 @@ export function loadWishlist(): WishlistItem[] {
       return [];
     }
     const parsed = JSON.parse(raw) as WishlistItem[];
-    return Array.isArray(parsed) ? parsed : [];
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+    return parsed
+      .map((item) => ({
+        ...item,
+        product_id: item.product_id ?? item.slug ?? "",
+      }))
+      .filter((item) => item.product_id);
   } catch {
     return [];
   }
@@ -34,15 +43,19 @@ export function saveWishlist(items: WishlistItem[]) {
   localStorage.setItem(storageKey, JSON.stringify(items));
 }
 
-export function hasWishlistItem(slug: string) {
-  return loadWishlist().some((item) => item.slug === slug);
+export function hasWishlistItem(productId: string, productSlug?: string | null) {
+  return loadWishlist().some((item) =>
+    item.product_id === productId || (!!productSlug && item.slug === productSlug),
+  );
 }
 
 export function toggleWishlistItem(item: Omit<WishlistItem, "added_at">) {
   const current = loadWishlist();
-  const exists = current.findIndex((entry) => entry.slug === item.slug);
-  if (exists >= 0) {
-    const next = current.filter((entry) => entry.slug !== item.slug);
+  const matches = (entry: WishlistItem) =>
+    entry.product_id === item.product_id || (!!item.slug && entry.slug === item.slug);
+  const exists = current.some(matches);
+  if (exists) {
+    const next = current.filter((entry) => !matches(entry));
     saveWishlist(next);
     return { items: next, liked: false };
   }

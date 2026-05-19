@@ -9,7 +9,7 @@ import { useLanguage } from "@/components/SiteProviders";
 import { useCart } from "@/components/CartProvider";
 import { copy } from "@/lib/i18n";
 import { formatCurrency } from "@/lib/format";
-import { calculateCartTotals, calculateLineTotal } from "@/lib/cart";
+import { calculateCartTotals, calculateLineTotal, normalizeCartQuantity } from "@/lib/cart";
 import { siteConfig, toWhatsappLink } from "@/lib/site-config";
 import type { Deal, Product } from "@/lib/types";
 import { getSupabaseBrowser } from "@/lib/supabase/browser";
@@ -64,6 +64,8 @@ export default function CheckoutClient({ product }: CheckoutClientProps) {
   const [deals, setDeals] = useState<Deal[]>([]);
   const [receiptFileName, setReceiptFileName] = useState<string | null>(null);
   const [receiptPreviewUrl, setReceiptPreviewUrl] = useState<string | null>(null);
+  const [availableCoupons, setAvailableCoupons] = useState<Array<{ id: string; code: string; type: string; value: number; min_subtotal?: number; max_uses?: number; used_count?: number; is_active: boolean; claimed?: boolean }>>([]);
+  const [loadingCoupons, setLoadingCoupons] = useState(false);
 
   const useCartMode = items.length > 0;
   const walletNumbers = [siteConfig.wallets.orange, siteConfig.wallets.vodafone].filter(Boolean);
@@ -80,7 +82,6 @@ export default function CheckoutClient({ product }: CheckoutClientProps) {
       ? calculateLineTotal({
           id: product.id,
           cart_key: product.id,
-          slug: product.slug,
           name_en: product.name_en,
           name_ar: product.name_ar,
           price: product.price,
@@ -127,6 +128,60 @@ export default function CheckoutClient({ product }: CheckoutClientProps) {
         setDeals([]);
       });
   }, []);
+
+  useEffect(() => {
+    const supabase = getSupabaseBrowser();
+    if (!supabase) {
+      return;
+    }
+
+    let mounted = true;
+    setLoadingCoupons(true);
+    Promise.all([
+      supabase
+        .from("coupons")
+        .select("id, code, type, value, min_subtotal, max_uses, used_count, is_active")
+        .eq("is_active", true)
+        .order("created_at", { ascending: false }),
+      userEmail
+        ? supabase
+            .from("customer_coupon_claims")
+            .select("coupon_id")
+            .eq("email", userEmail)
+        : Promise.resolve({ data: [] as Array<{ coupon_id: string }> }),
+    ])
+      .then(([couponResponse, claimsResponse]) => {
+        if (!mounted) {
+          return;
+        }
+
+        const couponData = (couponResponse.data ?? []) as Array<{ id: string; code: string; type: string; value: number; min_subtotal?: number; max_uses?: number; used_count?: number; is_active: boolean }>;
+        const claimSet = new Set(
+          (claimsResponse.data ?? []).map((entry) => String(entry.coupon_id)),
+        );
+
+        const hydrated = couponData.map((coupon) => ({
+          ...coupon,
+          claimed: claimSet.has(coupon.id),
+        }));
+
+        setAvailableCoupons(hydrated);
+      })
+      .catch(() => {
+        if (mounted) {
+          setAvailableCoupons([]);
+        }
+      })
+      .finally(() => {
+        if (mounted) {
+          setLoadingCoupons(false);
+        }
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [userEmail]);
 
   useEffect(() => {
     const supabase = getSupabaseBrowser();
@@ -197,10 +252,10 @@ export default function CheckoutClient({ product }: CheckoutClientProps) {
           {userEmail && <input type="hidden" name="customer_email" value={userEmail} />}
           <div>
             <p className="text-xs sm:text-sm uppercase tracking-[0.4em] text-gold/80 mb-2 flex items-center justify-center gap-2">
-              <span>◇◇◇</span> {t.checkout.subtitle} <span>◇◇◇</span>
+              <span className="text-gold/40">—</span> {t.checkout.subtitle} <span className="text-gold/40">—</span>
             </p>
-            <h1 className="font-display text-2xl sm:text-3xl tracking-[0.2em] text-gold flex items-center justify-center gap-3">
-              <span>𓋹</span> {t.checkout.title} <span>𓂀</span>
+            <h1 className="font-display text-2xl sm:text-3xl tracking-[0.2em] text-gold">
+              {t.checkout.title}
             </h1>
           </div>
 
@@ -371,9 +426,11 @@ export default function CheckoutClient({ product }: CheckoutClientProps) {
                     htmlFor="receipt-upload"
                     className="block w-full rounded-2xl border-2 border-dashed border-gold/30 bg-obsidian/70 px-4 py-6 sm:py-8 text-sm text-sand text-center cursor-pointer hover:bg-obsidian hover:border-gold/50 transition"
                   >
-                    <div className="text-3xl mb-2">📸</div>
-                    <div className="font-semibold text-gold mb-1">{t.checkout.receipt}</div>
-                    <p className="text-xs text-sand/60">PNG, JPG or GIF (max. 10MB)</p>
+                    <div className="mx-auto mb-3 inline-flex rounded-full border border-gold/20 bg-gold/10 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-gold">
+                      {t.checkout.receipt}
+                    </div>
+                    <div className="font-semibold text-gold mb-1">{locale === "ar" ? "اختر صورة الإيصال" : "Choose receipt image"}</div>
+                    <p className="text-xs text-sand/60">PNG, JPG or GIF. Max 10MB.</p>
                   </label>
                 </div>
               </div>
@@ -381,7 +438,9 @@ export default function CheckoutClient({ product }: CheckoutClientProps) {
               {receiptFileName && (
                 <div className="rounded-2xl border-2 border-gold/40 bg-linear-to-br from-gold/10 to-gold/5 p-4">
                   <div className="flex items-start gap-3 mb-4">
-                    <div className="text-3xl leading-none text-emerald">✓</div>
+                    <div className="rounded-full border border-emerald/30 bg-emerald/10 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-emerald">
+                      {locale === "ar" ? "تم الرفع" : "Uploaded"}
+                    </div>
                     <div className="flex-1">
                       <div className="font-semibold text-emerald text-sm">{t.checkout.receiptSelected}</div>
                       <p className="text-xs text-sand/70 mt-1">{receiptFileName}</p>
@@ -397,6 +456,17 @@ export default function CheckoutClient({ product }: CheckoutClientProps) {
                   )}
                 </div>
               )}
+
+              <div className="rounded-2xl border border-gold/20 bg-black/30 px-4 py-3 text-xs text-sand/70">
+                {receiptFileName ? (
+                  <div className="flex items-center justify-between gap-3">
+                      <span>{t.checkout.receiptSelected}</span>
+                      <span className="font-mono text-[0.65rem] text-sand/60 truncate">{receiptFileName}</span>
+                  </div>
+                ) : (
+                  t.checkout.walletUploadHelp
+                )}
+              </div>
             </div>
           )}
 
@@ -450,9 +520,11 @@ export default function CheckoutClient({ product }: CheckoutClientProps) {
                     htmlFor="instapay-receipt-upload"
                     className="block w-full rounded-2xl border-2 border-dashed border-gold/30 bg-obsidian/70 px-4 py-6 sm:py-8 text-sm text-sand text-center cursor-pointer hover:bg-obsidian hover:border-gold/50 transition"
                   >
-                    <div className="text-3xl mb-2">📸</div>
-                    <div className="font-semibold text-gold mb-1">{t.checkout.receipt}</div>
-                    <p className="text-xs text-sand/60">Upload confirmation screenshot</p>
+                    <div className="mx-auto mb-3 inline-flex rounded-full border border-gold/20 bg-gold/10 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-gold">
+                      {t.checkout.receipt}
+                    </div>
+                    <div className="font-semibold text-gold mb-1">{locale === "ar" ? "اختر صورة التحويل" : "Choose transfer image"}</div>
+                    <p className="text-xs text-sand/60">Upload a clear confirmation screenshot.</p>
                   </label>
                 </div>
               </div>
@@ -460,7 +532,9 @@ export default function CheckoutClient({ product }: CheckoutClientProps) {
               {receiptFileName && (
                 <div className="rounded-2xl border-2 border-gold/40 bg-linear-to-br from-gold/10 to-gold/5 p-4">
                   <div className="flex items-start gap-3 mb-4">
-                    <div className="text-3xl leading-none text-emerald">✓</div>
+                    <div className="rounded-full border border-emerald/30 bg-emerald/10 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-emerald">
+                      {locale === "ar" ? "تم الرفع" : "Uploaded"}
+                    </div>
                     <div className="flex-1">
                       <div className="font-semibold text-emerald text-sm">{t.checkout.receiptSelected}</div>
                       <p className="text-xs text-sand/70 mt-1">{receiptFileName}</p>
@@ -476,6 +550,17 @@ export default function CheckoutClient({ product }: CheckoutClientProps) {
                   )}
                 </div>
               )}
+
+              <div className="rounded-2xl border border-gold/20 bg-black/30 px-4 py-3 text-xs text-sand/70">
+                {receiptFileName ? (
+                  <div className="flex items-center justify-between gap-3">
+                      <span>{t.checkout.receiptSelected}</span>
+                      <span className="font-mono text-[0.65rem] text-sand/60 truncate">{receiptFileName}</span>
+                  </div>
+                ) : (
+                  t.checkout.walletUploadHelp
+                )}
+              </div>
             </div>
           )}
 
@@ -484,7 +569,7 @@ export default function CheckoutClient({ product }: CheckoutClientProps) {
             disabled={isOutOfStock || isSubmitting || (useCartMode && items.length === 0) || (paymentMethod !== "cod" && !receiptFileName)}
             className="mt-4 rounded-full bg-gold px-6 py-4 text-base sm:text-lg font-semibold uppercase tracking-[0.2em] text-ink disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center w-full hover:bg-gold/90 transition"
           >
-            {isSubmitting ? "🔄 Processing..." : `✓ ${t.checkout.place}`}
+            {isSubmitting ? "Processing..." : t.checkout.place}
           </button>
         </form>
 
@@ -524,33 +609,21 @@ export default function CheckoutClient({ product }: CheckoutClientProps) {
                               </p>
                             )}
                             <div className="mt-2 flex items-center justify-between gap-2">
-                              <div className="flex items-center gap-1">
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    if (item.quantity > 1) {
-                                      updateQuantity(cartKey, item.quantity - 1);
-                                    }
-                                  }}
-                                  className="h-5 w-5 rounded border border-gold/20 bg-obsidian text-xs text-gold hover:border-gold/50 transition"
-                                >
-                                  −
-                                </button>
-                                <span className="text-xs font-semibold text-sand w-4 text-center">
-                                  {item.quantity}
-                                </span>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const max = item.stock_qty ?? null;
-                                    if (max === null || item.quantity < max) {
-                                      updateQuantity(cartKey, item.quantity + 1);
-                                    }
-                                  }}
-                                  className="h-5 w-5 rounded border border-gold/20 bg-obsidian text-xs text-gold hover:border-gold/50 transition"
-                                >
-                                  +
-                                </button>
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="text"
+                                  inputMode="numeric"
+                                  pattern="[0-9]*"
+                                  value={String(item.quantity)}
+                                  onChange={(event) =>
+                                    updateQuantity(
+                                      cartKey,
+                                      normalizeCartQuantity(item, Number(event.target.value)),
+                                    )
+                                  }
+                                  className="h-6 w-12 rounded border border-gold/20 bg-obsidian px-2 text-center text-xs text-sand"
+                                  aria-label={t.checkout.qty}
+                                />
                               </div>
                               <button
                                 type="button"
@@ -559,7 +632,7 @@ export default function CheckoutClient({ product }: CheckoutClientProps) {
                                 }}
                                 className="text-xs text-red-400 hover:text-red-300 transition font-semibold"
                               >
-                                ✕
+                                ×
                               </button>
                             </div>
                           </div>
@@ -608,6 +681,60 @@ export default function CheckoutClient({ product }: CheckoutClientProps) {
                 <div className="text-xs text-sand/60 bg-obsidian/50 rounded-lg p-2 text-center">
                   Items: {items.reduce((sum, item) => sum + item.quantity, 0)} | {items.length} Product{items.length !== 1 ? "s" : ""}
                 </div>
+
+                {loadingCoupons ? (
+                  <div className="text-xs text-sand/60 bg-obsidian/50 rounded-lg p-3 text-center">
+                    {t.checkout.availableCoupons}...
+                  </div>
+                ) : (
+                  <div className="rounded-lg border border-gold/20 bg-obsidian/50 p-3 space-y-2">
+                    <div className="text-xs font-semibold text-gold/70 uppercase tracking-[0.2em]">
+                      {t.checkout.availableCoupons}
+                    </div>
+                    {availableCoupons.length === 0 ? (
+                      <p className="text-xs text-sand/60">{t.checkout.noCouponsAvailable}</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {availableCoupons.slice(0, 3).map((coupon) => (
+                          <div key={coupon.id} className="rounded-lg bg-gold/5 border border-gold/20 p-2">
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span className="font-mono text-xs font-bold text-gold truncate">{coupon.code}</span>
+                                <span className={`text-[0.6rem] px-1.5 py-0.5 rounded whitespace-nowrap ${
+                                  coupon.type === "percent"
+                                    ? "bg-gold/20 text-gold"
+                                    : "bg-sand/20 text-sand"
+                                }`}>
+                                  {coupon.type === "percent" ? `${coupon.value}%` : `${formatCurrency(coupon.value, locale)}`}
+                                </span>
+                              </div>
+                              {coupon.claimed ? (
+                                <span className="text-[0.6rem] text-emerald font-semibold">{t.checkout.claimedAlready}</span>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (!coupon.claimed && useCartMode) {
+                                      // Trigger claim via CartProvider or form submission
+                                    }
+                                  }}
+                                  className="text-[0.6rem] text-gold font-semibold hover:text-gold/80"
+                                >
+                                  {t.checkout.claimCoupon}
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                        {availableCoupons.length > 3 && (
+                          <p className="text-[0.6rem] text-sand/50 text-center pt-1">
+                            +{availableCoupons.length - 3} {t.checkout.availableCoupons.toLowerCase()}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
               </>
             ) : !useCartMode && product ? (
               <>

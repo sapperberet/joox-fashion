@@ -125,7 +125,7 @@ function RollingProductItem({ product, priority }: { product: Product; priority:
 
   useEffect(() => {
     let mounted = true;
-    fetchProductReviews(product.slug).then((reviews) => {
+    fetchProductReviews(product.id).then((reviews) => {
       if (!mounted) {
         return;
       }
@@ -134,7 +134,7 @@ function RollingProductItem({ product, priority }: { product: Product; priority:
     return () => {
       mounted = false;
     };
-  }, [product.slug]);
+  }, [product.id]);
 
   return (
     <div className="shrink-0 w-56 sm:w-64 md:w-72 group">
@@ -158,21 +158,39 @@ function RollingProductItem({ product, priority }: { product: Product; priority:
 
             <div className="absolute inset-0 bg-linear-to-t from-obsidian/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-            {product.is_on_sale && (
-              <div className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-red-600/95 px-3 py-1.5 backdrop-blur-sm shadow-lg">
-                <span className="text-base">🔥</span>
-                <span className="text-xs font-bold uppercase tracking-[0.2em] text-white">Sale</span>
+            {product.featured && (
+              <div className="absolute left-3 top-3">
+                <Image
+                  src="/badges/best-seller.jpg"
+                  alt={t.products.bestSeller}
+                  width={64}
+                  height={64}
+                  className="h-12 w-12 object-contain drop-shadow-lg"
+                />
               </div>
             )}
 
-            {product.featured && (
-              <div className="absolute left-3 top-3 flex items-center gap-1 rounded-full bg-gold/90 px-2.5 py-1 backdrop-blur-sm shadow-lg">
-                <span className="text-base">⭐</span>
+            {product.is_on_sale && (
+              <div className="absolute right-3 top-3">
+                <Image
+                  src="/badges/sale.png"
+                  alt={t.products.sale}
+                  width={64}
+                  height={64}
+                  className="h-12 w-12 object-contain drop-shadow-lg"
+                />
               </div>
             )}
+
             {outOfStock && (
-              <div className="absolute left-3 bottom-3 rounded-full bg-red-700/95 px-3 py-1 text-[0.6rem] font-bold uppercase tracking-[0.2em] text-white">
-                Out of Stock
+              <div className="absolute inset-x-0 bottom-3 flex justify-center">
+                <Image
+                  src="/badges/sold-out.png"
+                  alt={t.products.soldOut}
+                  width={140}
+                  height={42}
+                  className="h-9 w-auto object-contain drop-shadow-lg"
+                />
               </div>
             )}
 
@@ -345,6 +363,7 @@ function RollingProductItem({ product, priority }: { product: Product; priority:
 
 export default function RollingProductList({ products }: RollingProductListProps) {
   const { locale } = useLanguage();
+  const t = copy[locale];
   const [itemsPerPage, setItemsPerPage] = useState(4);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
@@ -415,7 +434,7 @@ export default function RollingProductList({ products }: RollingProductListProps
     }
     const timer = window.setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % totalPages);
-    }, 4500);
+    }, 6500);
     return () => window.clearInterval(timer);
   }, [canSlide, isPaused, prefersReducedMotion, totalPages]);
 
@@ -472,13 +491,13 @@ export default function RollingProductList({ products }: RollingProductListProps
       
       <div className="relative z-10 flex items-center justify-between px-6 sm:px-8 py-5 sm:py-6 border-b-2 border-gold/20">
         <div className="flex items-center gap-3">
-          <span className="text-3xl sm:text-4xl">🏆</span>
+          <span className="h-2.5 w-2.5 rounded-full bg-gold/70" />
           <div>
             <div className="text-xs uppercase tracking-[0.5em] text-gold/80 font-semibold">
-              Most Sold
+              {t.sections.mostSold}
             </div>
             <div className="text-xs uppercase tracking-[0.3em] text-sand/60">
-              Premium Collection
+              {t.sections.mostSoldSubtitle}
             </div>
           </div>
         </div>

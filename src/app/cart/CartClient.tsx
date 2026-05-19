@@ -180,11 +180,10 @@ export default function CartClient() {
                   </div>
                   <div className="flex flex-col items-end gap-3">
                     <input
-                      type="number"
-                      min={Math.max(item.min_order_qty ?? 1, 1)}
-                      step={Math.max(item.order_multiple ?? 1, 1)}
-                      max={item.max_order_qty ?? item.stock_qty ?? undefined}
-                      value={item.quantity}
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      value={String(item.quantity)}
                       onChange={(event) =>
                         updateQuantity(
                           item.cart_key ?? item.id,
@@ -195,6 +194,7 @@ export default function CartClient() {
                         )
                       }
                       className="w-20 rounded-xl border border-gold/20 bg-obsidian px-3 py-2 text-sm text-sand"
+                      aria-label={t.checkout.qty}
                     />
                     <button
                       type="button"

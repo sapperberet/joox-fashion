@@ -118,7 +118,7 @@ export default function TrackPage() {
                               : "border-gold/30 bg-obsidian text-sand/30"
                           }`}
                         >
-                          {idx <= currentStep ? "✓" : idx + 1}
+                          {idx <= currentStep ? "•" : idx + 1}
                         </div>
                         <span className={`text-[0.6rem] font-bold uppercase tracking-widest ${idx <= currentStep ? "text-gold" : "text-sand/30"} hidden sm:block`}>
                           {t.track[`status${step.charAt(0).toUpperCase() + step.slice(1)}` as keyof typeof t.track] || step}

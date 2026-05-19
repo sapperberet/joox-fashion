@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { verifyAdminToken } from "@/lib/admin-auth";
 import { copy } from "@/lib/i18n";
+import AdminAlert from "@/components/AdminAlert";
 import CouponsClient from "./CouponsClient";
 
 type CouponsPageProps = {
@@ -45,6 +46,7 @@ export default async function CouponsPage({ searchParams }: CouponsPageProps) {
     ? copy.en.admin.flash[searchParams.flash as keyof typeof copy.en.admin.flash]
     : undefined;
   const flashKind = searchParams?.kind ?? (searchParams?.flash ? "success" : undefined);
+  const labels = copy.en.admin;
 
   return (
     <div className="space-y-6">
@@ -53,26 +55,22 @@ export default async function CouponsPage({ searchParams }: CouponsPageProps) {
           href={`/atelier?token=${encodeURIComponent(token)}`}
           className="rounded-full border border-gold/30 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-gold hover:bg-gold/10"
         >
-          Main Admin
+          {labels.mainAdmin}
         </a>
         <a
           href={`/atelier/deals?admin_token=${encodeURIComponent(token)}`}
           className="rounded-full border border-gold/30 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-gold hover:bg-gold/10"
         >
-          Sales Deals
+          {labels.manageDeal}
         </a>
       </div>
 
       {flashMessage && (
-        <div
-          className={`rounded-lg px-4 py-3 text-sm ${
-            flashKind === "error"
-              ? "bg-red-500/20 text-red-200 border border-red-500/30"
-              : "bg-green-500/20 text-green-200 border border-green-500/30"
-          }`}
-        >
-          {flashMessage}
-        </div>
+        <AdminAlert
+          type={flashKind ?? "info"}
+          message={flashMessage}
+          dismissible={true}
+        />
       )}
 
       <CouponsClient

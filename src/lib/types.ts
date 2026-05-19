@@ -33,6 +33,31 @@ export type Category = {
   slug: string;
   season: Season | null;
   sort_order: number | null;
+  type?: string | null;
+  parent_category_id?: string | null;
+  description_en?: string | null;
+  description_ar?: string | null;
+  icon_url?: string | null;
+  is_active?: boolean | null;
+  display_settings?: Record<string, unknown> | null;
+};
+
+export type Event = {
+  id: string;
+  name_en: string;
+  name_ar: string;
+  slug: string;
+  description_en?: string | null;
+  description_ar?: string | null;
+  event_type: string;
+  start_date?: string | null;
+  end_date?: string | null;
+  icon_url?: string | null;
+  banner_url?: string | null;
+  is_active?: boolean | null;
+  sort_order?: number | null;
+  display_settings?: Record<string, unknown> | null;
+  created_at?: string;
 };
 
 export type Product = {
@@ -65,7 +90,6 @@ export type Product = {
 export type CartItem = {
   id: string;
   cart_key: string;
-  slug: string;
   name_en: string;
   name_ar: string;
   price: number;

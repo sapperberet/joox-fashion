@@ -31,6 +31,7 @@ interface CouponsClientProps {
 export default function CouponsClient({ coupons, adminToken }: CouponsClientProps) {
   const { locale } = useLanguage();
   const t = copy[locale];
+  const labels = t.admin;
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [formData, setFormData] = useState<Record<string, any>>({});
 
@@ -50,10 +51,10 @@ export default function CouponsClient({ coupons, adminToken }: CouponsClientProp
 
   return (
     <div className="rounded-2xl border border-gold/20 bg-linear-to-br from-stone/90 to-stone/80 p-6 sm:p-8 temple-panel">
-      <h2 className="mb-6 text-2xl font-bold text-gold">Manage Coupons</h2>
+      <h2 className="mb-6 text-2xl font-bold text-gold">{labels.manageCoupons}</h2>
 
       {coupons.length === 0 ? (
-        <p className="text-center text-sand/60 py-8">No coupons found</p>
+        <p className="text-center text-sand/60 py-8">{labels.noData}</p>
       ) : (
         <div className="space-y-3 max-h-[600px] overflow-y-auto">
           {coupons.map((coupon) => {
@@ -110,7 +111,7 @@ export default function CouponsClient({ coupons, adminToken }: CouponsClientProp
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div>
                         <label className="block text-xs font-semibold uppercase tracking-[0.2em] text-gold/80 mb-1">
-                          Min Score
+                          {labels.minScore}
                         </label>
                         <input
                           type="number"
@@ -131,7 +132,7 @@ export default function CouponsClient({ coupons, adminToken }: CouponsClientProp
                       </div>
                       <div>
                         <label className="block text-xs font-semibold uppercase tracking-[0.2em] text-gold/80 mb-1">
-                          Min Spend
+                          {labels.minSpendLabel}
                         </label>
                         <input
                           type="number"
@@ -166,7 +167,7 @@ export default function CouponsClient({ coupons, adminToken }: CouponsClientProp
                           type="submit"
                           className="rounded-lg bg-gold px-4 py-2 text-sm font-semibold text-ink hover:bg-gold/90 transition-all"
                         >
-                          Save
+                          {labels.save}
                         </button>
                       </form>
                       {coupon.requirement && (
@@ -185,7 +186,7 @@ export default function CouponsClient({ coupons, adminToken }: CouponsClientProp
                             type="submit"
                             className="rounded-lg border border-red-500/30 px-4 py-2 text-sm font-semibold text-red-300 hover:bg-red-500/10 transition-all"
                           >
-                            Clear
+                            {labels.clear}
                           </button>
                         </form>
                       )}

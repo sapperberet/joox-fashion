@@ -7,9 +7,9 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 function getRedirectUrl(formData: FormData, flash?: "reviewShown" | "reviewHidden" | "reviewDeleted" | "actionFailed" | "missingData") {
   const params = new URLSearchParams();
   const q = String(formData.get("q") ?? "").trim();
-  const slug = String(formData.get("slug") ?? "").trim();
+  const product = String(formData.get("product") ?? "").trim();
   if (q) params.set("q", q);
-  if (slug) params.set("slug", slug);
+  if (product) params.set("product", product);
   if (flash) {
     params.set("flash", flash);
     params.set("kind", flash === "actionFailed" || flash === "missingData" ? "error" : "success");

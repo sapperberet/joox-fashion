@@ -1,5 +1,6 @@
 import ProductsClient from "./ProductsClient";
 import { getSupabasePublic } from "@/lib/supabase/public";
+import { getMostSoldProducts } from "@/lib/most-sold";
 import type { Category, Product } from "@/lib/types";
 
 async function getProducts(): Promise<Product[]> {
@@ -38,9 +39,10 @@ type ProductsPageProps = {
 };
 
 export default async function ProductsPage({ searchParams }: ProductsPageProps) {
-  const [products, categories] = await Promise.all([
+  const [products, categories, mostSold] = await Promise.all([
     getProducts(),
     getCategories(),
+    getMostSoldProducts(6),
   ]);
   const category = String(searchParams?.category ?? "").trim().toLowerCase();
   return (
@@ -48,6 +50,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
       products={products}
       categories={categories}
       initialCategorySlug={category}
+      mostSoldProducts={mostSold}
     />
   );
 }

@@ -19,6 +19,18 @@ export default function ThankYouClient({ orderId }: ThankYouClientProps) {
   const t = copy[locale];
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
+  const isArabic = locale === "ar";
+  const paymentStepMessage = order?.payment_method
+    ? order.payment_method === "cod"
+      ? isArabic
+        ? "جهّز المبلغ عند الاستلام وسيتم التأكيد عبر واتساب."
+        : "Prepare cash on delivery; we will confirm via WhatsApp."
+      : isArabic
+        ? "تم استلام الإيصال وسيتم التحقق من الدفع قبل الشحن."
+        : "We received your receipt and will verify payment before shipping."
+    : isArabic
+      ? "سيتم تأكيد طلبك قريباً."
+      : "We will confirm your order shortly.";
 
   useEffect(() => {
     if (!orderId) {
@@ -71,12 +83,12 @@ export default function ThankYouClient({ orderId }: ThankYouClientProps) {
 
   const getStatusLabel = (status?: string | null) => {
     const labels: Record<string, string> = {
-      "paid": "✓ Paid",
-      "pending": "⏳ Pending",
-      "failed": "✗ Failed",
-      "delivered": "✓ Delivered",
-      "in_transit": "🚚 In Transit",
-      "created": "📦 Created",
+      "paid": "• Paid",
+      "pending": "◌ Pending",
+      "failed": "× Failed",
+      "delivered": "• Delivered",
+      "in_transit": "» In Transit",
+      "created": "○ Created",
     };
     return labels[status ?? ""] || (status?.toUpperCase() ?? "PENDING");
   };
@@ -89,7 +101,7 @@ export default function ThankYouClient({ orderId }: ThankYouClientProps) {
           <div className="text-center">
             <div className="mb-4 flex justify-center">
               <div className="inline-flex items-center justify-center h-16 w-16 rounded-full bg-emerald/20 border-2 border-emerald">
-                <span className="text-3xl">✓</span>
+                <span className="text-3xl">•</span>
               </div>
             </div>
             <p className="text-xs sm:text-sm uppercase tracking-[0.4em] text-gold/80">
@@ -98,7 +110,7 @@ export default function ThankYouClient({ orderId }: ThankYouClientProps) {
             <h1 className="mt-3 sm:mt-4 font-display text-3xl sm:text-4xl md:text-5xl tracking-[0.2em] text-gold leading-tight">
               {t.thankYou.title}
             </h1>
-            <p className="mt-4 text-base sm:text-lg md:text-xl text-sand/70 leading-relaxed">
+                <p className="text-xl font-bold text-gold break-all">{order.id}</p>
               {t.thankYou.body}
             </p>
           </div>
@@ -118,6 +130,27 @@ export default function ThankYouClient({ orderId }: ThankYouClientProps) {
               </div>
             </div>
           )}
+
+          <div style={{ background: "linear-gradient(135deg, rgba(12,10,8,0.86), rgba(28,24,20,0.7))" }} className="rounded-2xl border-2 border-gold/30 p-5 sm:p-6">
+            <h3 className="text-sm uppercase tracking-[0.3em] text-gold font-semibold mb-3">
+              {isArabic ? "الخطوات التالية" : "Next steps"}
+            </h3>
+            <ul className="space-y-2 text-sm text-sand/70">
+              <li>
+                {isArabic
+                  ? "احتفظ برقم الطلب لمتابعة حالتك لاحقاً."
+                  : "Save your order reference for tracking."}
+              </li>
+              <li>
+                {paymentStepMessage}
+              </li>
+              <li>
+                {isArabic
+                  ? "يمكنك تتبع الشحنة من صفحة التتبع في أي وقت."
+                  : "You can track the shipment from the tracking page anytime."}
+              </li>
+            </ul>
+          </div>
 
           {loading ? (
             <div className="rounded-2xl border border-gold/20 bg-obsidian/60 px-4 sm:px-6 py-8 sm:py-10 text-center text-sand/60 animate-pulse">
@@ -235,7 +268,7 @@ export default function ThankYouClient({ orderId }: ThankYouClientProps) {
                     <div className="flex flex-col justify-center gap-3">
                       <div className="rounded-lg bg-gold/10 border border-gold/20 p-4">
                         <div className="text-xs text-sand/60 mb-1">Receipt uploaded</div>
-                        <div className="text-emerald font-semibold">✓ Confirmed</div>
+                        <div className="text-emerald font-semibold">• Confirmed</div>
                       </div>
                       <p className="text-sm text-sand/70">
                         Your payment receipt has been received and is being processed. You'll receive a confirmation via WhatsApp when payment is verified.
@@ -272,6 +305,12 @@ export default function ThankYouClient({ orderId }: ThankYouClientProps) {
               className="rounded-full bg-gold px-6 py-3 sm:px-8 sm:py-4 text-sm sm:text-base font-semibold uppercase tracking-[0.2em] text-ink transition hover:bg-gold/90 text-center inline-flex items-center justify-center gap-2"
             >
               🏠 {t.thankYou.cta}
+            </Link>
+            <Link
+              href="/track"
+              className="rounded-full border-2 border-gold/40 px-6 py-3 sm:px-8 sm:py-4 text-sm sm:text-base font-semibold uppercase tracking-[0.2em] text-gold transition hover:bg-gold/10 text-center inline-flex items-center justify-center gap-2"
+            >
+              📦 {isArabic ? "تتبع الطلب" : "Track order"}
             </Link>
             <a
               href="https://wa.me/+201064482371"

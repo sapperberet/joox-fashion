@@ -315,6 +315,64 @@ end $$;
 alter table public.products add column if not exists subcategory_id uuid references public.subcategories(id) on delete set null;
 alter table public.products add column if not exists breadcrumb_path text;
 
+-- Extend categories with richer hierarchy and type support
+alter table public.categories add column if not exists type text default 'collection';
+alter table public.categories add column if not exists parent_category_id uuid references public.categories(id) on delete set null;
+alter table public.categories add column if not exists description_en text;
+alter table public.categories add column if not exists description_ar text;
+alter table public.categories add column if not exists icon_url text;
+alter table public.categories add column if not exists is_active boolean default true;
+alter table public.categories add column if not exists display_settings jsonb default '{}'::jsonb;
+
+-- Create events table for seasonal and promotional events
+create table if not exists public.events (
+  id uuid primary key default uuid_generate_v4(),
+  name_en text not null,
+  name_ar text not null,
+  slug text not null unique,
+  description_en text,
+  description_ar text,
+  event_type text not null,
+  start_date timestamptz,
+  end_date timestamptz,
+  icon_url text,
+  banner_url text,
+  is_active boolean default true,
+  sort_order integer,
+  display_settings jsonb default '{}'::jsonb,
+  created_at timestamptz default now()
+);
+
+alter table public.events enable row level security;
+
+do $$
+begin
+  create policy "Public events read" on public.events
+    for select using (is_active = true);
+exception
+  when duplicate_object then null;
+end $$;
+
+-- Join table for event to product association
+create table if not exists public.event_products (
+  id uuid primary key default uuid_generate_v4(),
+  event_id uuid not null references public.events(id) on delete cascade,
+  product_id uuid not null references public.products(id) on delete cascade,
+  featured_order integer,
+  created_at timestamptz default now(),
+  unique(event_id, product_id)
+);
+
+alter table public.event_products enable row level security;
+
+do $$
+begin
+  create policy "Public event products read" on public.event_products
+    for select using (true);
+exception
+  when duplicate_object then null;
+end $$;
+
 create table if not exists public.coupon_requirements (
   id uuid primary key default uuid_generate_v4(),
   coupon_id uuid not null references public.coupons(id) on delete cascade,

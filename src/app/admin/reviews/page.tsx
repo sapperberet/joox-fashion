@@ -17,7 +17,7 @@ type AdminReviewRow = {
 type ReviewPageProps = {
   searchParams?: {
     q?: string;
-    slug?: string;
+    product?: string;
     flash?: string;
     kind?: "success" | "error" | "info";
   };
@@ -25,7 +25,7 @@ type ReviewPageProps = {
 
 export default async function AdminReviewsPage({ searchParams }: ReviewPageProps) {
   const query = (searchParams?.q ?? "").trim().toLowerCase();
-  const productSlug = (searchParams?.slug ?? "").trim();
+  const productId = (searchParams?.product ?? "").trim();
   const supabase = getSupabaseAdmin();
 
   let dbQuery = supabase
@@ -34,16 +34,43 @@ export default async function AdminReviewsPage({ searchParams }: ReviewPageProps
     .order("created_at", { ascending: false })
     .limit(300);
 
-  if (productSlug) {
-    dbQuery = dbQuery.eq("product_slug", productSlug);
+  if (productId) {
+    dbQuery = dbQuery.eq("product_slug", productId);
   }
 
   const { data } = await dbQuery;
   const reviews = (data ?? []) as AdminReviewRow[];
 
+  const productIds = Array.from(new Set(reviews.map((review) => review.product_slug).filter(Boolean)));
+  const { data: productRows } = productIds.length
+    ? await supabase
+        .from("products")
+        .select("id, name_en, name_ar")
+        .in("id", productIds)
+    : { data: [] };
+
+  const productMap = new Map(
+    (productRows ?? []).map((product) => [product.id, product]),
+  );
+
+  const getProductLabel = (review: AdminReviewRow) => {
+    const product = productMap.get(review.product_slug);
+    if (!product) {
+      return review.product_slug;
+    }
+    return `${product.name_en}${product.name_ar ? ` / ${product.name_ar}` : ""}`;
+  };
+
   const filtered = query
     ? reviews.filter((review) =>
-        [review.product_slug, review.user_name, review.user_email, review.title, review.body]
+        [
+          getProductLabel(review),
+          review.product_slug,
+          review.user_name,
+          review.user_email,
+          review.title,
+          review.body,
+        ]
           .join(" ")
           .toLowerCase()
           .includes(query),
@@ -72,9 +99,9 @@ export default async function AdminReviewsPage({ searchParams }: ReviewPageProps
               className="rounded-xl border border-gold/20 bg-obsidian px-4 py-3 text-sand"
             />
             <input
-              name="slug"
-              defaultValue={searchParams?.slug ?? ""}
-              placeholder="Product slug"
+              name="product"
+              defaultValue={searchParams?.product ?? ""}
+              placeholder="Product id"
               className="rounded-xl border border-gold/20 bg-obsidian px-4 py-3 text-sand"
             />
             <button type="submit" className="rounded-xl bg-gold px-4 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-ink">
@@ -93,7 +120,8 @@ export default async function AdminReviewsPage({ searchParams }: ReviewPageProps
               <article key={review.id} className="rounded-3xl border border-gold/20 bg-stone/80 p-6 temple-panel">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
-                    <div className="text-sm uppercase tracking-[0.2em] text-gold/70">{review.product_slug}</div>
+                    <div className="text-sm uppercase tracking-[0.2em] text-gold/70">{getProductLabel(review)}</div>
+                    <div className="mt-1 text-xs text-sand/50 font-mono">{review.product_slug}</div>
                     <h3 className="mt-2 text-lg font-semibold text-sand">{review.title}</h3>
                     <div className="mt-1 text-xs text-sand/60">{review.user_name} · {review.user_email}</div>
                     <div className="mt-2 flex gap-1 text-gold">
@@ -117,7 +145,7 @@ export default async function AdminReviewsPage({ searchParams }: ReviewPageProps
                     <input type="hidden" name="review_id" value={review.id} />
                     <input type="hidden" name="is_visible" value={review.is_visible ? "false" : "true"} />
                     <input type="hidden" name="q" value={searchParams?.q ?? ""} />
-                    <input type="hidden" name="slug" value={searchParams?.slug ?? ""} />
+                    <input type="hidden" name="product" value={searchParams?.product ?? ""} />
                     <button type="submit" className="rounded-full border border-gold/20 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-gold">
                       {review.is_visible ? "Hide" : "Show"}
                     </button>
@@ -125,7 +153,7 @@ export default async function AdminReviewsPage({ searchParams }: ReviewPageProps
                   <form action={deleteReview}>
                     <input type="hidden" name="review_id" value={review.id} />
                     <input type="hidden" name="q" value={searchParams?.q ?? ""} />
-                    <input type="hidden" name="slug" value={searchParams?.slug ?? ""} />
+                    <input type="hidden" name="product" value={searchParams?.product ?? ""} />
                     <button type="submit" className="rounded-full border border-red-500/30 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-red-400">
                       Delete
                     </button>

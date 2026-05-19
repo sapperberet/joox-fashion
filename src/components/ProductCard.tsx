@@ -31,7 +31,7 @@ export default function ProductCard({ product }: ProductCardProps) {
   const { pushFeedback } = useFeedback();
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [busyAction, setBusyAction] = useState<"basket" | "checkout" | null>(null);
-  const [liked, setLiked] = useState(() => hasWishlistItem(product.slug));
+  const [liked, setLiked] = useState(() => hasWishlistItem(product.id));
   const [ratingSummary, setRatingSummary] = useState(() => getReviewSummary([]));
   const images = useMemo(() => getProductImages(product), [product]);
   const variants = useMemo(() => getProductVariants(product), [product]);
@@ -39,6 +39,12 @@ export default function ProductCard({ product }: ProductCardProps) {
   const displayPrice = getVariantPrice(product, defaultVariant);
   const effectiveStock = defaultVariant?.stock_qty ?? product.stock_qty ?? null;
   const outOfStock = effectiveStock !== null && effectiveStock <= 0;
+  const lowStock = effectiveStock !== null && effectiveStock > 0 && effectiveStock <= 5;
+  const stockLabel = outOfStock
+    ? t.products.soldOut
+    : lowStock
+      ? `${t.products.lowStock} (${effectiveStock})`
+      : t.products.inStock;
   const seasonLabel =
     product.season === "summer"
       ? t.sections.summer
@@ -50,7 +56,7 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   useEffect(() => {
     let mounted = true;
-    fetchProductReviews(product.slug).then((reviews) => {
+    fetchProductReviews(product.id).then((reviews) => {
       if (!mounted) {
         return;
       }
@@ -59,7 +65,7 @@ export default function ProductCard({ product }: ProductCardProps) {
     return () => {
       mounted = false;
     };
-  }, [product.slug]);
+  }, [product.id]);
 
   return (
     <div
@@ -94,25 +100,48 @@ export default function ProductCard({ product }: ProductCardProps) {
         )}
         {seasonLabel && (
           <span className="absolute left-2 top-2 sm:left-3 sm:top-3 rounded-full border border-gold/40 bg-obsidian/90 px-2.5 py-1.5 sm:px-3.5 sm:py-2 text-[0.6rem] sm:text-[0.65rem] uppercase tracking-[0.3em] text-gold font-semibold flex items-center gap-1">
-            {seasonLabel === t.sections.summer ? '𓇳' : '𓂀'} {seasonLabel}
+            {seasonLabel}
           </span>
+        )}
+        {product.featured && (
+          <div className="absolute left-2 top-2 sm:left-3 sm:top-3">
+            <Image
+              src="/badges/best-seller.jpg"
+              alt={t.products.bestSeller}
+              width={72}
+              height={72}
+              className="h-14 w-14 object-contain drop-shadow-lg"
+            />
+          </div>
         )}
         {product.is_on_sale && (
-          <span className="absolute right-2 top-2 sm:right-3 sm:top-3 rounded-full bg-red-600 px-2.5 py-1.5 sm:px-3.5 sm:py-2 text-[0.6rem] sm:text-[0.65rem] uppercase tracking-[0.3em] text-white font-bold flex items-center gap-1">
-            𓆣 Sale
-          </span>
+          <div className="absolute right-2 top-2 sm:right-3 sm:top-3">
+            <Image
+              src="/badges/sale.png"
+              alt={t.products.sale}
+              width={72}
+              height={72}
+              className="h-14 w-14 object-contain drop-shadow-lg"
+            />
+          </div>
         )}
         {outOfStock && (
-          <span className="absolute left-2 bottom-2 sm:left-3 sm:bottom-3 rounded-full bg-red-700/95 px-3 py-1.5 text-[0.6rem] sm:text-[0.65rem] uppercase tracking-[0.25em] text-white font-bold">
-            Out of Stock
-          </span>
+          <div className="absolute inset-x-0 bottom-2 sm:bottom-3 flex justify-center">
+            <Image
+              src="/badges/sold-out.png"
+              alt={t.products.soldOut}
+              width={160}
+              height={48}
+              className="h-10 w-auto object-contain drop-shadow-lg"
+            />
+          </div>
         )}
         <button
           type="button"
           onClick={(event) => {
             event.stopPropagation();
             const next = toggleWishlistItem({
-              slug: product.slug,
+              product_id: product.id,
               name_en: product.name_en,
               name_ar: product.name_ar,
               image_url: galleryImage ?? product.image_url,
@@ -122,7 +151,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           }}
           className={`absolute right-2 bottom-2 rounded-full border px-3 py-1.5 text-[0.65rem] font-semibold uppercase tracking-[0.18em] transition ${liked ? "border-gold bg-gold text-ink" : "border-gold/30 bg-obsidian/80 text-gold hover:bg-gold/10"}`}
         >
-          {liked ? "♥ Saved" : "♡ Save"}
+          {liked ? t.products.saved : t.products.save}
         </button>
         {images.length > 1 && (
           <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 gap-1.5 rounded-full bg-obsidian/70 px-2 py-1 backdrop-blur-sm">
@@ -146,7 +175,9 @@ export default function ProductCard({ product }: ProductCardProps) {
           <div className="text-lg sm:text-xl font-semibold text-sand line-clamp-2 flex-1 hover:text-gold transition">
             {locale === "ar" ? product.name_ar : product.name_en}
           </div>
-          <span className="text-xl sm:text-2xl mt-0.5">𓋹</span>
+          <span className={`rounded-full border px-2.5 py-1 text-[0.6rem] uppercase tracking-[0.2em] ${outOfStock ? "border-red-500/40 text-red-300" : lowStock ? "border-amber-400/40 text-amber-200" : "border-emerald-500/30 text-emerald-200"}`}>
+            {stockLabel}
+          </span>
         </div>
         <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-gold/80">
           <span className="flex items-center gap-1 text-gold">
@@ -175,7 +206,6 @@ export default function ProductCard({ product }: ProductCardProps) {
         )}
         <div className="mt-auto flex flex-col gap-2">
           <div className="flex items-center gap-2 text-base sm:text-lg font-semibold text-gold">
-            <span>𓂀</span>
             {defaultVariant ? (
               <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-2">
                 {defaultVariant.sale_price ? (
